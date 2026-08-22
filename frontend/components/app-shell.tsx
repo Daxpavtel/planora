@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   BellIcon,
+  ChevronDownIcon,
   CompassIcon,
   HouseIcon,
   MapIcon,
@@ -104,16 +105,34 @@ export function AppShell({
                 <BellIcon />
                 <span className="absolute right-2 top-2 size-2 rounded-full bg-primary ring-2 ring-background" />
               </Button>
+              {/* Profile Button leading directly to /profile */}
+              <Link
+                href="/profile"
+                className="flex h-10 items-center gap-2.5 rounded-xl px-2.5 transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label="View Profile"
+              >
+                <Avatar className="size-8 ring-2 ring-brand/25 transition-transform hover:scale-105">
+                  <AvatarFallback className="bg-brand-soft text-xs font-bold text-brand">
+                    {user.initials}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="hidden text-sm font-semibold text-ink sm:block">
+                  {user.firstName}
+                </span>
+              </Link>
+
               <DropdownMenu>
                 <DropdownMenuTrigger
-                  render={<Button variant="ghost" className="h-11 gap-2.5 px-2" />}
+                  render={
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-8 text-muted-foreground hover:text-ink"
+                      aria-label="User menu"
+                    />
+                  }
                 >
-                  <Avatar className="size-8 ring-2 ring-brand/20">
-                    <AvatarFallback className="bg-brand-soft text-xs font-bold text-brand">
-                      {user.initials}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="hidden text-sm font-semibold text-ink sm:block">{user.firstName}</span>
+                  <ChevronDownIcon className="size-4" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuLabel>
@@ -124,7 +143,9 @@ export function AppShell({
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuGroup>
-                    <DropdownMenuItem render={<Link href="/profile" />}>Profile & Settings</DropdownMenuItem>
+                    <DropdownMenuItem render={<Link href="/profile" />}>
+                      Profile & Settings
+                    </DropdownMenuItem>
                     <DropdownMenuItem render={<Link href="/calendar" />}>Calendar</DropdownMenuItem>
                     <DropdownMenuItem render={<Link href="/admin" />}>
                       Admin panel

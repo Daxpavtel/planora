@@ -47,10 +47,10 @@ const durations = ['Any length', 'Under 2h', '2h and up']
 
 export default function ActivitiesPage() {
   const cityOptions = useMemo(
-    () => [...new Set(activities.map((a) => a.city))],
+    () => ['All Cities', ...new Set(activities.map((a) => a.city))],
     [],
   )
-  const [city, setCity] = useState(cityOptions[0] || 'Jaipur')
+  const [city, setCity] = useState('All Cities')
   const [date, setDate] = useState('2026-10-15')
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('All')
@@ -68,8 +68,8 @@ export default function ActivitiesPage() {
   const results = useMemo(() => {
     const q = query.trim().toLowerCase()
     return activities.filter((a) => {
-      if (a.city !== city) return false
-      if (q && !`${a.title} ${a.description} ${a.category}`.toLowerCase().includes(q)) return false
+      if (city !== 'All Cities' && a.city !== city) return false
+      if (q && !`${a.title} ${a.description} ${a.category} ${a.city}`.toLowerCase().includes(q)) return false
       if (category !== 'All' && a.category !== category) return false
       if (time !== 'Any time' && a.bestTime !== time) return false
       if (price === 'Free' && a.cost !== 0) return false

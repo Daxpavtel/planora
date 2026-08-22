@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -88,6 +88,36 @@ export default function NewTripPage() {
   const [touchedName, setTouchedName] = useState(false)
   const [customTotalBudget, setCustomTotalBudget] = useState<number | null>(null)
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      const queryCity = params.get('city')
+      const queryCities = params.get('cities')
+      if (queryCity && cities.some((c) => c.id === queryCity)) {
+        setStops((prev) => (prev.includes(queryCity) ? prev : [queryCity, ...prev]))
+        const found = cities.find((c) => c.id === queryCity)
+        if (found && !name) {
+          setName(`${found.name} Heritage & Culture Trail`)
+        }
+      } else if (queryCities) {
+        const list = queryCities.split(',').filter((id) => cities.some((c) => c.id === id))
+        if (list.length > 0) {
+          setStops(list)
+        }
+      } else {
+        const stored = localStorage.getItem('planora_selected_cities')
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored)
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setStops(parsed)
+            }
+          } catch {}
+        }
+      }
+    }
+  }, [])
+
   const nightCount = nights(start, end)
   const isPastStart = Boolean(start && start < todayStr)
   const dateConflict = Boolean(start && end) && (nightCount <= 0 || isPastStart)
@@ -127,8 +157,10 @@ export default function NewTripPage() {
       meals,
       activities: activitiesCost,
       transit,
+      transport: transit,
       buffer,
       calculatedTotal,
+      total: calculatedTotal,
       finalTotal: customTotalBudget !== null ? customTotalBudget : calculatedTotal,
     }
   }, [style, pace, nightCount, travellers, stopCities, customTotalBudget])
@@ -148,7 +180,7 @@ export default function NewTripPage() {
     if (step === 2 && stops.length === 0) return
     if (step === 4) {
       setPending(true)
-      setTimeout(() => router.push('/trips/european-summer-escape/build'), 900)
+      setTimeout(() => router.push('/trips/rajasthan-royal-heritage/build'), 900)
       return
     }
     setStep((s) => Math.min(4, s + 1))
@@ -445,7 +477,7 @@ export default function NewTripPage() {
                           <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-semibold text-ink">{city.name}</p>
                             <p className="truncate text-xs text-muted-foreground">
-                              {city.country} · {city.suggestedDays} · €{city.dailyCost}/day
+                              {city.country} · {city.suggestedDays} · ₹{city.dailyCost.toLocaleString('en-IN')}/day
                             </p>
                           </div>
                           <Button
@@ -486,7 +518,7 @@ export default function NewTripPage() {
                                   {city.name}
                                 </p>
                                 <p className="truncate text-xs text-muted-foreground">
-                                  {city.country} · €{city.dailyCost}/day
+                                  {city.country} · ₹{city.dailyCost.toLocaleString('en-IN')}/day
                                 </p>
                               </div>
                               {added ? (
@@ -551,13 +583,13 @@ export default function NewTripPage() {
                   </Field>
 
                   <Field>
-                    <FieldLabel htmlFor="target">Target Total Budget (€)</FieldLabel>
+                    <FieldLabel htmlFor="target">Target Total Budget (₹)</FieldLabel>
                     <Input
                       id="target"
                       type="number"
                       value={targetBudget}
-                      min={100}
-                      step={100}
+                      min={1000}
+                      step={1000}
                       onChange={(e) => setCustomTotalBudget(Number(e.target.value))}
                     />
                     <FieldDescription>

@@ -1,14 +1,18 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import {
   BookmarkIcon,
   CheckIcon,
   GitCompareIcon,
+  MapPinIcon,
   PlusIcon,
   SearchIcon,
+  SparklesIcon,
   StarIcon,
   XIcon,
 } from 'lucide-react'
@@ -120,9 +124,80 @@ const highlights: Record<string, string[]> = {
     'Jallianwala Bagh historic national memorial',
     'Gobindgarh Fort cultural light-and-sound show',
   ],
+  jodhpur: [
+    'Mehrangarh Fort & Flying Fox zipline over battlements',
+    'Janta Sweet Home spicy Mirchi Vada & Mawa Kachori',
+    'Jaswant Thada white marble royal cenotaphs',
+    'Umaid Bhawan Palace museum & vintage cars',
+    'Blue City narrow alleyways & Clock Tower market',
+  ],
+  jaisalmer: [
+    'Sam Sand Dunes camel safari & Thar desert sunset',
+    'Jaisalmer Golden Fort (Sonar Qila) living fort tour',
+    'Patwon Ki Haveli intricate yellow sandstone carvings',
+    'Desert camp cultural dance & Rajasthani dinner',
+    'Gadisar Lake peaceful evening boat ride',
+  ],
+  hampi: [
+    'Vijaya Vittala Stone Chariot & musical pillars',
+    'Virupaksha Temple ancient active shrine walk',
+    'Tungabhadra River traditional coracle boat ride',
+    'Matanga Hill 360-degree panoramic sunrise hike',
+    'Mango Tree restaurant South Indian thali feast',
+  ],
+  rishikesh: [
+    'Shivpuri white-water Ganga river rafting (Grade III)',
+    'Triveni Ghat spiritual evening Maha Aarti',
+    'Beatles Ashram (Chaurasi Kutia) graffiti & meditation domes',
+    'Laxman Jhula & Neer Garh jungle waterfall trek',
+    'Chotiwala Ayurvedic thali & spiced masala chai',
+  ],
+  shimla: [
+    'UNESCO Kalka-Shimla heritage toy train ride',
+    'The Ridge & neo-Gothic Christ Church walk',
+    'Jakhoo Temple & giant hilltop Hanuman statue',
+    'Himachali Chana Madra & steamed Siddu tasting',
+    'Mall Road evening stroll & colonial viewpoints',
+  ],
+  mysuru: [
+    'Mysore Palace 100,000 golden bulb illumination',
+    'Guru Sweet Mart original pure ghee Mysore Pak',
+    'Chamundi Hill Chamundeshwari Temple & Nandi monolith',
+    'Mylari Hotel authentic butter masala dosa',
+    'Devaraja heritage silk, incense & flower market',
+  ],
+  hyderabad: [
+    'Charminar & Laad Bazaar artisan bangle walk',
+    'Authentic Hyderabadi Dum Biryani & Mirchi Ka Salan',
+    'Golconda Fort acoustical echo tour & light show',
+    'Nimrah Cafe Irani Chai & Osmania Biscuits',
+    'Chowmahalla Palace Nizam royal chandeliers',
+  ],
+  puri: [
+    'Shree Jagannath Temple & sacred 56-bhog Mahaprasad',
+    'Puri Golden Beach morning coastal stroll',
+    'Konark Sun Temple (UNESCO Black Pagoda) drive',
+    'Crispy Puri Khaja & roasted Chhena Poda sweet tasting',
+    'Raghurajpur heritage Pattachitra artisan village',
+  ],
+  leh: [
+    'Pangong Tso azure high-altitude lake expedition',
+    'Nubra Valley double-humped Bactrian camel safari',
+    'Khardung La Pass high Himalayan mountain drive',
+    'Authentic Ladakhi Thukpa, steamed Momos & Butter Tea',
+    'Thiksey & Hemis ancient Tibetan monasteries',
+  ],
+  madurai: [
+    'Meenakshi Amman Temple 1,000-Pillar Hall & Aarti',
+    'Thirumalai Nayakkar Mahal royal court & sound show',
+    'Famous Famous chilled Jigarthanda royal drink',
+    'Konar Mess legendary spicy mutton Kari Dosa',
+    'Vandiyur Mariamman Teppakulam temple tank',
+  ],
 }
 
 export default function ExplorePage() {
+  const router = useRouter()
   const [query, setQuery] = useState('')
   const [region, setRegion] = useState('All')
   const [budget, setBudget] = useState('Any')
@@ -130,9 +205,32 @@ export default function ExplorePage() {
   const [interests, setInterests] = useState<string[]>([])
   const [layout, setLayout] = useState('Grid')
   const [saved, setSaved] = useState<string[]>(['jaipur'])
-  const [added, setAdded] = useState<string[]>(['udaipur'])
+  const [added, setAdded] = useState<string[]>(['jaipur', 'udaipur'])
   const [compare, setCompare] = useState<string[]>([])
   const [detail, setDetail] = useState<City | null>(null)
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedAdded = localStorage.getItem('planora_selected_cities')
+      if (storedAdded) {
+        try {
+          const parsed = JSON.parse(storedAdded)
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setAdded(parsed)
+          }
+        } catch {}
+      }
+      const storedSaved = localStorage.getItem('planora_saved_cities')
+      if (storedSaved) {
+        try {
+          const parsed = JSON.parse(storedSaved)
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setSaved(parsed)
+          }
+        } catch {}
+      }
+    }
+  }, [])
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -147,6 +245,39 @@ export default function ExplorePage() {
     })
   }, [query, region, budget, climate, interests])
 
+  function handleToggleAdd(city: City) {
+    const isCurrentlyAdded = added.includes(city.id)
+    const nextAdded = isCurrentlyAdded ? added.filter((x) => x !== city.id) : [...added, city.id]
+    setAdded(nextAdded)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('planora_selected_cities', JSON.stringify(nextAdded))
+    }
+    if (!isCurrentlyAdded) {
+      toast.success(`Added ${city.name} to your trip plan!`, {
+        action: {
+          label: 'Plan Trip',
+          onClick: () => router.push(`/trips/new?cities=${nextAdded.join(',')}`),
+        },
+      })
+    } else {
+      toast.info(`Removed ${city.name} from trip stops.`)
+    }
+  }
+
+  function handleToggleSave(city: City) {
+    const isCurrentlySaved = saved.includes(city.id)
+    const nextSaved = isCurrentlySaved ? saved.filter((x) => x !== city.id) : [...saved, city.id]
+    setSaved(nextSaved)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('planora_saved_cities', JSON.stringify(nextSaved))
+    }
+    if (!isCurrentlySaved) {
+      toast.success(`Saved ${city.name} to bookmarks!`)
+    } else {
+      toast.info(`Removed ${city.name} from bookmarks.`)
+    }
+  }
+
   function toggle(list: string[], setList: (v: string[]) => void, id: string) {
     setList(list.includes(id) ? list.filter((x) => x !== id) : [...list, id])
   }
@@ -157,10 +288,10 @@ export default function ExplorePage() {
         <header className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
             <h2 className="font-display text-2xl font-bold text-ink">
-              Where would you like to go?
+              Where would you like to go in India?
             </h2>
             <p className="text-sm text-muted-foreground">
-              Search by city, country or the kind of days you want to have.
+              Explore 22 iconic heritage cities, forts, spiritual ghats, food trails, and Himalayan escapes.
             </p>
           </div>
           <InputGroup className="h-12">
@@ -168,7 +299,7 @@ export default function ExplorePage() {
               <SearchIcon />
             </InputGroupAddon>
             <InputGroupInput
-              placeholder="Try “coastal food city” or “Kyoto”"
+              placeholder="Try “forts”, “lakes”, “Jaipur”, “Goa”, or “biryani”"
               value={query}
               aria-label="Search destinations"
               onChange={(e) => setQuery(e.target.value)}
@@ -176,6 +307,50 @@ export default function ExplorePage() {
             />
           </InputGroup>
         </header>
+
+        {/* Selected Cities Quick Plan Bar */}
+        {added.length > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-brand/30 bg-brand-soft p-4 shadow-sm">
+            <div className="flex items-center gap-3">
+              <span className="flex size-10 items-center justify-center rounded-xl bg-brand text-brand-foreground">
+                <MapPinIcon className="size-5" />
+              </span>
+              <div>
+                <p className="font-display text-sm font-bold text-ink">
+                  {added.length} {added.length === 1 ? 'City' : 'Cities'} Selected for Your Trip
+                </p>
+                <p className="text-xs text-muted-foreground line-clamp-1">
+                  {added
+                    .map((id) => cities.find((c) => c.id === id)?.name)
+                    .filter(Boolean)
+                    .join(' → ')}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setAdded([])
+                  if (typeof window !== 'undefined') {
+                    localStorage.removeItem('planora_selected_cities')
+                  }
+                  toast.info('Cleared selected cities.')
+                }}
+              >
+                Clear
+              </Button>
+              <Button
+                size="sm"
+                render={<Link href={`/trips/new?cities=${added.join(',')}`} />}
+              >
+                Plan Trip with {added.length} {added.length === 1 ? 'City' : 'Cities'}
+                <PlusIcon data-icon="inline-end" />
+              </Button>
+            </div>
+          </div>
+        )}
 
         <section aria-label="Filters" className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4">
           <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
@@ -272,7 +447,7 @@ export default function ExplorePage() {
                       {city.name}, {city.country}
                     </p>
                     <p className="truncate text-xs text-muted-foreground">
-                      €{city.dailyCost}/day · {city.suggestedDays}
+                      ₹{city.dailyCost.toLocaleString('en-IN')}/day · {city.suggestedDays}
                     </p>
                   </div>
                   <Button variant="outline" size="sm" onClick={() => setDetail(city)}>
@@ -301,7 +476,7 @@ export default function ExplorePage() {
                       />
                       <button
                         type="button"
-                        onClick={() => toggle(saved, setSaved, city.id)}
+                        onClick={() => handleToggleSave(city)}
                         aria-pressed={isSaved}
                         className="absolute right-3 top-3 flex min-h-9 items-center gap-1.5 rounded-full bg-card/90 px-3 text-xs font-semibold text-ink backdrop-blur"
                       >
@@ -358,7 +533,7 @@ export default function ExplorePage() {
                           size="sm"
                           className="flex-1"
                           variant={isAdded ? 'secondary' : 'default'}
-                          onClick={() => toggle(added, setAdded, city.id)}
+                          onClick={() => handleToggleAdd(city)}
                         >
                           {isAdded ? (
                             <CheckIcon data-icon="inline-start" />
@@ -448,7 +623,7 @@ export default function ExplorePage() {
                 <dl className="grid grid-cols-2 gap-3 text-sm">
                   {[
                     ['Ideal duration', detail.suggestedDays],
-                    ['Cost index', `${detail.budgetLevel} · €${detail.dailyCost}/day`],
+                    ['Cost index', `${detail.budgetLevel} · ₹${detail.dailyCost.toLocaleString('en-IN')}/day`],
                     ['Climate', detail.climate],
                     ['Popularity', `${detail.popularity}%`],
                   ].map(([label, value]) => (
@@ -475,13 +650,17 @@ export default function ExplorePage() {
                 <div className="flex flex-wrap gap-2">
                   <Button
                     className="flex-1"
+                    variant={added.includes(detail.id) ? 'secondary' : 'default'}
                     onClick={() => {
-                      toggle(added, setAdded, detail.id)
-                      setDetail(null)
+                      handleToggleAdd(detail)
                     }}
                   >
-                    <PlusIcon data-icon="inline-start" />
-                    Add to trip
+                    {added.includes(detail.id) ? (
+                      <CheckIcon data-icon="inline-start" />
+                    ) : (
+                      <PlusIcon data-icon="inline-start" />
+                    )}
+                    {added.includes(detail.id) ? 'In this trip' : 'Add to trip'}
                   </Button>
                   <Button variant="outline" render={<Link href="/activities" />}>
                     See activities

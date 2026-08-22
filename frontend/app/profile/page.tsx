@@ -455,8 +455,8 @@ export default function ProfilePage() {
                       </Select>
                     </Field>
                     <Field>
-                      <FieldLabel htmlFor="p-budget">Typical total trip budget (€)</FieldLabel>
-                      <Input id="p-budget" type="number" defaultValue={2500} step={100} />
+                      <FieldLabel htmlFor="p-budget">Typical total trip budget (₹)</FieldLabel>
+                      <Input id="p-budget" type="number" defaultValue={50000} step={1000} />
                       <FieldDescription>Total budget for all travellers & stops per trip.</FieldDescription>
                     </Field>
                     <Separator />

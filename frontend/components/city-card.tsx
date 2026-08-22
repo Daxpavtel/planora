@@ -1,4 +1,5 @@
 import Image from 'next/image'
+import Link from 'next/link'
 import { PlusIcon, StarIcon } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -41,7 +42,7 @@ export function CityCard({ city }: { city: City }) {
           <div>
             <dt className="text-muted-foreground">Avg. daily cost</dt>
             <dd className="tabular font-display text-sm font-bold text-ink">
-              €{city.dailyCost}
+              ₹{city.dailyCost.toLocaleString('en-IN')}
             </dd>
           </div>
           <div>
@@ -49,7 +50,12 @@ export function CityCard({ city }: { city: City }) {
             <dd className="font-display text-sm font-bold text-ink">{city.suggestedDays}</dd>
           </div>
         </dl>
-        <Button variant="outline" size="sm" className="mt-auto w-full">
+        <Button
+          variant="outline"
+          size="sm"
+          className="mt-auto w-full"
+          render={<Link href={`/trips/new?city=${city.id}`} />}
+        >
           <PlusIcon data-icon="inline-start" />
           Add to trip
         </Button>

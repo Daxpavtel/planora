@@ -71,11 +71,11 @@ const categoryColor: Record<string, string> = {
   Other: 'var(--chart-5)',
 }
 
-const currencies = ['EUR (€)', 'USD ($)', 'INR (₹)', 'GBP (£)']
+const currencies = ['INR (₹)', 'USD ($)', 'EUR (€)', 'GBP (£)']
 
 export function TripBudget() {
   const [target, setTarget] = useState(featuredTrip.budget)
-  const [currency, setCurrency] = useState('EUR (€)')
+  const [currency, setCurrency] = useState('INR (₹)')
   const [openTable, setOpenTable] = useState(true)
 
   const spent = budgetByCategory.reduce((sum, c) => sum + c.amount, 0)

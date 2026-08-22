@@ -5,11 +5,11 @@ const { getPool } = require('../config/db');
 // Helper to map country/city to Indian regions
 function getRegion(country, cityName) {
   const n = (cityName || '').toLowerCase();
-  if (['jaipur', 'udaipur', 'varanasi', 'delhi', 'agra', 'amritsar'].some((c) => n.includes(c))) return 'North India';
+  if (['jaipur', 'udaipur', 'varanasi', 'delhi', 'agra', 'amritsar', 'jodhpur', 'jaisalmer'].some((c) => n.includes(c))) return 'North India';
   if (['mumbai', 'goa'].some((c) => n.includes(c))) return 'West India';
-  if (['bengaluru', 'kochi', 'chennai', 'hyderabad'].some((c) => n.includes(c))) return 'South India';
-  if (['kolkata', 'darjeeling'].some((c) => n.includes(c))) return 'East India';
-  if (['manali', 'shimla', 'leh', 'ladakh'].some((c) => n.includes(c))) return 'Himalayas';
+  if (['bengaluru', 'kochi', 'chennai', 'hyderabad', 'mysuru', 'mysore', 'madurai', 'hampi'].some((c) => n.includes(c))) return 'South India';
+  if (['kolkata', 'darjeeling', 'puri', 'bhubaneswar'].some((c) => n.includes(c))) return 'East India';
+  if (['manali', 'shimla', 'leh', 'ladakh', 'rishikesh', 'haridwar'].some((c) => n.includes(c))) return 'Himalayas';
   return 'India';
 }
 
@@ -28,6 +28,16 @@ function getCityImage(cityName) {
   if (n.includes('kolkata')) return 'https://images.unsplash.com/photo-1558431382-27e303142255?auto=format&fit=crop&w=800&q=80';
   if (n.includes('agra')) return 'https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&w=800&q=80';
   if (n.includes('amritsar')) return 'https://images.unsplash.com/photo-1588714477688-cf28a50e94f7?auto=format&fit=crop&w=800&q=80';
+  if (n.includes('jodhpur')) return 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=800&q=80';
+  if (n.includes('jaisalmer')) return 'https://images.unsplash.com/photo-1577717903315-1691ae25ab3f?auto=format&fit=crop&w=800&q=80';
+  if (n.includes('hampi')) return 'https://images.unsplash.com/photo-1600100397608-f010f443b749?auto=format&fit=crop&w=800&q=80';
+  if (n.includes('rishikesh')) return 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80';
+  if (n.includes('shimla')) return 'https://images.unsplash.com/photo-1588668214407-6ea9a6d8c272?auto=format&fit=crop&w=800&q=80';
+  if (n.includes('mysuru') || n.includes('mysore')) return 'https://images.unsplash.com/photo-1600100397608-f010f443b749?auto=format&fit=crop&w=800&q=80';
+  if (n.includes('hyderabad')) return 'https://images.unsplash.com/photo-1605649487212-47bdab064df8?auto=format&fit=crop&w=800&q=80';
+  if (n.includes('puri')) return 'https://images.unsplash.com/photo-1596176530529-78163a4f7af2?auto=format&fit=crop&w=800&q=80';
+  if (n.includes('leh') || n.includes('ladakh')) return 'https://images.unsplash.com/photo-1506197603052-3cc9c3a201bd?auto=format&fit=crop&w=800&q=80';
+  if (n.includes('madurai')) return 'https://images.unsplash.com/photo-1582510003544-4d00b7f74220?auto=format&fit=crop&w=800&q=80';
   return 'https://images.unsplash.com/photo-1599661046289-e31897846e41?auto=format&fit=crop&w=800&q=80';
 }
 

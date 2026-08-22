@@ -236,9 +236,9 @@ router.get('/:id', async (req, res) => {
         stop_id: activeStop.stop_id,
         travelNote:
           dayNum === 3
-            ? 'Train connection · 3h 20m · €89'
+            ? 'Vande Bharat Express connection · 3h 20m · ₹1,250'
             : dayNum === 5
-            ? 'Flight transfer · 1h 25m · €76'
+            ? 'Express transfer · 1h 25m · ₹2,450'
             : undefined,
         activities: dayActivities,
       });
