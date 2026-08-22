@@ -23,16 +23,21 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
+import { useAuth } from '@/lib/auth'
 import { featuredTrip, itinerary, money } from '@/lib/data'
 import { cn } from '@/lib/utils'
 
 const cityAccent: Record<string, string> = {
-  Paris: 'bg-brand',
-  Amsterdam: 'bg-success',
-  Berlin: 'bg-warning',
+  Jaipur: 'bg-brand',
+  Udaipur: 'bg-success',
+  Delhi: 'bg-warning',
+  Goa: 'bg-sky-500',
+  Mumbai: 'bg-indigo-500',
+  Varanasi: 'bg-amber-600',
 }
 
 export default function SharedItineraryPage() {
+  const { user } = useAuth()
   const [saved, setSaved] = useState(false)
   const [showInvite, setShowInvite] = useState(true)
   const totalActivities = itinerary.reduce((sum, d) => sum + d.activities.length, 0)
@@ -75,15 +80,15 @@ export default function SharedItineraryPage() {
           />
           <div className="flex flex-col gap-5 p-5 sm:p-7">
             <div className="flex items-center gap-3">
-              <Avatar className="size-10">
-                <AvatarFallback className="bg-brand-soft text-sm font-semibold text-brand">
-                  YM
+              <Avatar className="size-10 ring-2 ring-brand/20">
+                <AvatarFallback className="bg-brand-soft text-sm font-bold text-brand">
+                  {user.initials}
                 </AvatarFallback>
               </Avatar>
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-ink">Yash Mehta</p>
+                <p className="text-sm font-semibold text-ink">{user.name}</p>
                 <p className="text-xs text-muted-foreground">
-                  Planned 12 trips · Ahmedabad, India
+                  Planned 5 trips · {user.homeCity}
                 </p>
               </div>
               <span className="ml-auto flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -258,9 +263,9 @@ export default function SharedItineraryPage() {
 
       <footer className="border-t border-border bg-card">
         <div className="mx-auto flex max-w-4xl flex-col gap-2 px-4 py-8 sm:flex-row sm:items-center sm:px-6">
-          <Wordmark />
+          <Wordmark showTagline />
           <p className="text-sm text-muted-foreground sm:ml-auto">
-            Shared with GlobeTrotter · Read-only view
+            Shared with Planora · Read-only view
           </p>
         </div>
       </footer>

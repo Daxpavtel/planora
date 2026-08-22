@@ -14,9 +14,11 @@ import {
   InputGroupInput,
 } from '@/components/ui/input-group'
 import { Spinner } from '@/components/ui/spinner'
+import { useAuth } from '@/lib/auth'
 
 export default function LoginPage() {
   const router = useRouter()
+  const { login } = useAuth()
   const [email, setEmail] = useState('yash.mehta@example.com')
   const [password, setPassword] = useState('travelfar')
   const [show, setShow] = useState(false)
@@ -31,7 +33,8 @@ export default function LoginPage() {
     }
     setError(null)
     setPending(true)
-    setTimeout(() => router.push('/dashboard'), 700)
+    login({ email })
+    setTimeout(() => router.push('/dashboard'), 600)
   }
 
   return (
@@ -39,7 +42,7 @@ export default function LoginPage() {
       <header className="flex flex-col gap-2">
         <h1 className="text-3xl font-extrabold text-ink">Welcome back</h1>
         <p className="text-sm leading-relaxed text-muted-foreground">
-          Pick up where you left off — the European Summer Escape is 68% planned.
+          Pick up where you left off — your Rajasthan & Golden Triangle journey is ready.
         </p>
       </header>
 
@@ -112,7 +115,7 @@ export default function LoginPage() {
       </form>
 
       <p className="text-sm text-muted-foreground">
-        New to GlobeTrotter?{' '}
+        New to Planora?{' '}
         <Link href="/register" className="font-semibold text-brand hover:underline">
           Create an account
         </Link>

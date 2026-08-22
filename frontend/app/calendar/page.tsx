@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { useAuth } from '@/lib/auth'
 import {
   featuredTrip,
   itinerary,
@@ -37,22 +38,26 @@ import { cn } from '@/lib/utils'
 
 const views = ['Month', 'Week', 'Timeline']
 const cityTone: Record<string, { dot: string; soft: string }> = {
-  Paris: { dot: 'bg-brand', soft: 'bg-brand-soft text-brand' },
-  Amsterdam: { dot: 'bg-success', soft: 'bg-success-soft text-success' },
-  Berlin: { dot: 'bg-warning', soft: 'bg-warning-soft text-warning-foreground' },
+  Jaipur: { dot: 'bg-brand', soft: 'bg-brand-soft text-brand' },
+  Udaipur: { dot: 'bg-success', soft: 'bg-success-soft text-success' },
+  Delhi: { dot: 'bg-warning', soft: 'bg-warning-soft text-warning-foreground' },
+  Goa: { dot: 'bg-sky-500', soft: 'bg-sky-100 text-sky-700' },
+  Mumbai: { dot: 'bg-indigo-500', soft: 'bg-indigo-100 text-indigo-700' },
+  Varanasi: { dot: 'bg-amber-600', soft: 'bg-amber-100 text-amber-800' },
 }
 
-// June 2026 starts on a Monday.
-const monthStartOffset = 0
-const daysInMonth = 30
+// October 2026 starts on a Thursday.
+const monthStartOffset = 3
+const daysInMonth = 31
 const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-const todayDate = 14
+const todayDate = 15
 
 function dayNumber(date: string) {
   return Number(date.split(' ')[1])
 }
 
 export default function CalendarPage() {
+  const { user } = useAuth()
   const [view, setView] = useState('Month')
   const [cityFilter, setCityFilter] = useState('All cities')
   const [categoryFilter, setCategoryFilter] = useState('All categories')
@@ -156,7 +161,7 @@ export default function CalendarPage() {
             {
               value: travellerFilter,
               set: setTravellerFilter,
-              options: ['Everyone', 'Yash', 'Aarti', 'Sam'],
+              options: ['Everyone', user.firstName, 'Aarti', 'Sam'],
               label: 'Traveller',
             },
           ].map((filter) => (

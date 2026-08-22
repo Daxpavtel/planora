@@ -74,16 +74,16 @@ export default function NewTripPage() {
   const todayStr = useMemo(() => new Date().toISOString().split('T')[0], [])
 
   const [name, setName] = useState('')
-  const [start, setStart] = useState('2026-06-12')
-  const [end, setEnd] = useState('2026-06-24')
+  const [start, setStart] = useState('2026-10-15')
+  const [end, setEnd] = useState('2026-10-25')
   const [description, setDescription] = useState('')
   const [origin, setOrigin] = useState('Ahmedabad, India')
   const [travellers, setTravellers] = useState(2)
   const [style, setStyle] = useState<(typeof styles)[number]>('Balanced')
   const [privacy, setPrivacy] = useState('private')
-  const [stops, setStops] = useState(['lisbon', 'kyoto'])
+  const [stops, setStops] = useState(['jaipur', 'udaipur'])
   const [pace, setPace] = useState('Balanced — two or three anchors a day')
-  const [picked, setPicked] = useState<string[]>(['Food', 'Culture'])
+  const [picked, setPicked] = useState<string[]>(['Food', 'Heritage'])
   const [flexible, setFlexible] = useState(true)
   const [touchedName, setTouchedName] = useState(false)
   const [customTotalBudget, setCustomTotalBudget] = useState<number | null>(null)
@@ -113,19 +113,27 @@ export default function NewTripPage() {
     const avgCityDailyCost =
       stopCities.length > 0
         ? stopCities.reduce((sum, c) => sum + c.dailyCost, 0) / stopCities.length
-        : 80
+        : 2500
 
-    const stays = Math.round(nightsTotal * (avgCityDailyCost * 1.1) * roomUnits * styleMultiplier)
-    const meals = Math.round(nightsTotal * 35 * travellers * styleMultiplier * paceMultiplier)
-    const activitiesCost = Math.round(nightsTotal * 25 * travellers * styleMultiplier * paceMultiplier)
-    const transferLegs = Math.max(1, stopCities.length)
-    const transport = Math.round(transferLegs * 65 * travellers * styleMultiplier)
+    const stays = Math.round(nightsTotal * (avgCityDailyCost * 0.9) * roomUnits * styleMultiplier)
+    const meals = Math.round(nightsTotal * 650 * travellers * styleMultiplier * paceMultiplier)
+    const activitiesCost = Math.round(nightsTotal * 450 * travellers * styleMultiplier * paceMultiplier)
+    const transit = Math.round((stopCities.length > 1 ? (stopCities.length - 1) * 1200 : 800) * travellers)
+    const buffer = Math.round((stays + meals + activitiesCost + transit) * 0.08)
+    const calculatedTotal = stays + meals + activitiesCost + transit + buffer
 
-    const total = stays + meals + activitiesCost + transport
-    return { stays, meals, activities: activitiesCost, transport, total }
-  }, [stopCities, nightCount, travellers, style, pace])
+    return {
+      stays,
+      meals,
+      activities: activitiesCost,
+      transit,
+      buffer,
+      calculatedTotal,
+      finalTotal: customTotalBudget !== null ? customTotalBudget : calculatedTotal,
+    }
+  }, [style, pace, nightCount, travellers, stopCities, customTotalBudget])
 
-  const targetBudget = customTotalBudget ?? smartBudget.total
+  const targetBudget = smartBudget.finalTotal
 
   function markDirty() {
     setSaved('saving')

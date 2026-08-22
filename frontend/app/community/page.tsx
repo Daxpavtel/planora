@@ -29,12 +29,14 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/in
 import { Separator } from '@/components/ui/separator'
 import { Textarea } from '@/components/ui/textarea'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { useAuth } from '@/lib/auth'
 import { communityTrips, money, type CommunityReview, type CommunityTrip } from '@/lib/data'
 import { cn } from '@/lib/utils'
 
-const categories = ['All', 'Top Rated', 'Most Bookmarked', 'Budget Friendly', 'Europe', 'Asia']
+const categories = ['All', 'Top Rated', 'Most Bookmarked', 'Budget Friendly', 'North India', 'South India', 'West India']
 
 export default function CommunityPage() {
+  const { user } = useAuth()
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('All')
   const [trips, setTrips] = useState<CommunityTrip[]>(communityTrips)
@@ -56,9 +58,10 @@ export default function CommunityPage() {
       let matchesCategory = true
       if (category === 'Top Rated') matchesCategory = trip.rating >= 4.8
       if (category === 'Most Bookmarked') matchesCategory = trip.bookmarked
-      if (category === 'Budget Friendly') matchesCategory = trip.style === 'Budget' || trip.budget <= 1200
-      if (category === 'Europe') matchesCategory = trip.cities.some((c) => ['Paris', 'Amsterdam', 'Berlin', 'Lisbon', 'Istanbul'].includes(c))
-      if (category === 'Asia') matchesCategory = trip.cities.some((c) => ['Kyoto', 'Osaka', 'Udaipur', 'Jodhpur'].includes(c))
+      if (category === 'Budget Friendly') matchesCategory = trip.style === 'Budget' || trip.budget <= 20000
+      if (category === 'North India') matchesCategory = trip.cities.some((c) => ['Jaipur', 'Udaipur', 'Delhi', 'Varanasi', 'Manali', 'Agra', 'Amritsar'].includes(c))
+      if (category === 'South India') matchesCategory = trip.cities.some((c) => ['Kochi', 'Bengaluru'].includes(c))
+      if (category === 'West India') matchesCategory = trip.cities.some((c) => ['Goa', 'Mumbai'].includes(c))
 
       return matchesQuery && matchesCategory
     })
@@ -99,8 +102,8 @@ export default function CommunityPage() {
 
     const reviewObj: CommunityReview = {
       id: `r-${Date.now()}`,
-      user: 'Yash Mehta (You)',
-      avatar: 'YM',
+      user: `${user.name} (You)`,
+      avatar: user.initials,
       rating: newRating,
       comment: newComment,
       date: 'Just now',
@@ -338,9 +341,9 @@ export default function CommunityPage() {
               </CardHeader>
               <CardContent className="flex flex-col gap-3">
                 {[
-                  { name: 'Yash Mehta', role: 'Trip Architect', trips: 5, avatar: 'YM' },
-                  { name: 'Aarti Rao', role: 'Pro Traveler', trips: 14, avatar: 'AR' },
-                  { name: 'Mei Tan', role: 'Local Expert · Kyoto', trips: 9, avatar: 'MT' },
+                  { name: user.name, role: user.role || 'Trip Architect', trips: 5, avatar: user.initials },
+                  { name: 'Aarti Rao', role: 'Pro Traveler · Rajasthan', trips: 14, avatar: 'AR' },
+                  { name: 'Rohan Sharma', role: 'Local Guide · Goa', trips: 8, avatar: 'RS' },
                 ].map((c) => (
                   <div key={c.name} className="flex items-center gap-3 rounded-xl border border-border p-2.5">
                     <Avatar className="size-8">

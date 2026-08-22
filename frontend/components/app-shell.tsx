@@ -28,7 +28,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
-import { currentUser } from '@/lib/data'
+import { useAuth } from '@/lib/auth'
 import { cn } from '@/lib/utils'
 
 const mobileNav = [
@@ -50,6 +50,7 @@ export function AppShell({
 }) {
   const pathname = usePathname()
   const { expanded, toggleSidebar, setOpenMobile } = useSidebar()
+  const { user, logout } = useAuth()
 
   return (
     <div className="min-h-svh bg-background">
@@ -105,25 +106,25 @@ export function AppShell({
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger
-                  render={<Button variant="ghost" className="h-11 gap-2 px-2" />}
+                  render={<Button variant="ghost" className="h-11 gap-2.5 px-2" />}
                 >
-                  <Avatar className="size-8">
-                    <AvatarFallback className="bg-brand-soft text-xs font-semibold text-brand">
-                      {currentUser.initials}
+                  <Avatar className="size-8 ring-2 ring-brand/20">
+                    <AvatarFallback className="bg-brand-soft text-xs font-bold text-brand">
+                      {user.initials}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="hidden text-sm font-medium sm:block">{currentUser.firstName}</span>
+                  <span className="hidden text-sm font-semibold text-ink sm:block">{user.firstName}</span>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuLabel>
-                    <span className="block text-sm font-semibold">{currentUser.name}</span>
+                    <span className="block text-sm font-semibold">{user.name}</span>
                     <span className="block truncate text-xs font-normal text-muted-foreground">
-                      {currentUser.email}
+                      {user.email}
                     </span>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuGroup>
-                    <DropdownMenuItem render={<Link href="/profile" />}>Profile</DropdownMenuItem>
+                    <DropdownMenuItem render={<Link href="/profile" />}>Profile & Settings</DropdownMenuItem>
                     <DropdownMenuItem render={<Link href="/calendar" />}>Calendar</DropdownMenuItem>
                     <DropdownMenuItem render={<Link href="/admin" />}>
                       Admin panel
@@ -134,7 +135,10 @@ export function AppShell({
                   </DropdownMenuGroup>
                   <DropdownMenuSeparator />
                   <DropdownMenuGroup>
-                    <DropdownMenuItem render={<Link href="/login" />} variant="destructive">
+                    <DropdownMenuItem
+                      render={<Link href="/login" onClick={() => logout()} />}
+                      variant="destructive"
+                    >
                       Log out
                     </DropdownMenuItem>
                   </DropdownMenuGroup>

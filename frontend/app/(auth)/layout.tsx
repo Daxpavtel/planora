@@ -32,7 +32,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             actually held.&rdquo;
           </blockquote>
           <figcaption className="mt-4 text-sm text-white/70">
-            Nina Patel · 27 trips planned with GlobeTrotter
+            Nina Patel · 27 trips planned with Planora
           </figcaption>
         </figure>
       </div>

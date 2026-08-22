@@ -31,9 +31,12 @@ import { featuredTrip, itinerary, money, type ItineraryActivity } from '@/lib/da
 import { cn } from '@/lib/utils'
 
 const cityAccent: Record<string, string> = {
-  Paris: 'bg-brand',
-  Amsterdam: 'bg-success',
-  Berlin: 'bg-warning',
+  Jaipur: 'bg-brand',
+  Udaipur: 'bg-success',
+  Delhi: 'bg-warning',
+  Goa: 'bg-sky-500',
+  Mumbai: 'bg-indigo-500',
+  Varanasi: 'bg-amber-600',
 }
 
 function ActivityBlock({ activity }: { activity: ItineraryActivity }) {

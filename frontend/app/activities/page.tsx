@@ -40,9 +40,9 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { activities, itinerary, money, type Activity } from '@/lib/data'
 import { cn } from '@/lib/utils'
 
-const categories = ['All', 'Sightseeing', 'Food', 'Culture', 'Adventure', 'Nature', 'Shopping']
+const categories = ['All', 'Sightseeing', 'Heritage', 'Food', 'Culture', 'Spiritual', 'Adventure', 'Nature']
 const times = ['Any time', 'Morning', 'Afternoon', 'Evening']
-const prices = ['Any price', 'Free', 'Under €25', '€25 and up']
+const prices = ['Any price', 'Free', 'Under ₹500', '₹500 and up']
 const durations = ['Any length', 'Under 2h', '2h and up']
 
 export default function ActivitiesPage() {
@@ -50,8 +50,8 @@ export default function ActivitiesPage() {
     () => [...new Set(activities.map((a) => a.city))],
     [],
   )
-  const [city, setCity] = useState(cityOptions[0])
-  const [date, setDate] = useState('2026-06-12')
+  const [city, setCity] = useState(cityOptions[0] || 'Jaipur')
+  const [date, setDate] = useState('2026-10-15')
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('All')
   const [time, setTime] = useState('Any time')
@@ -73,8 +73,8 @@ export default function ActivitiesPage() {
       if (category !== 'All' && a.category !== category) return false
       if (time !== 'Any time' && a.bestTime !== time) return false
       if (price === 'Free' && a.cost !== 0) return false
-      if (price === 'Under €25' && a.cost >= 25) return false
-      if (price === '€25 and up' && a.cost < 25) return false
+      if (price === 'Under ₹500' && a.cost >= 500) return false
+      if (price === '₹500 and up' && a.cost < 500) return false
       const minutes =
         (/(\d+)h/.exec(a.duration) ? Number(/(\d+)h/.exec(a.duration)![1]) * 60 : 0) +
         (/(\d+)m/.exec(a.duration) ? Number(/(\d+)m/.exec(a.duration)![1]) : 0)
@@ -403,7 +403,7 @@ export default function ActivitiesPage() {
                   </Button>
                   <Button
                     variant="outline"
-                    render={<Link href="/trips/european-summer-escape/build" />}
+                    render={<Link href="/trips/rajasthan-royal-heritage/build" />}
                   >
                     Open builder
                   </Button>

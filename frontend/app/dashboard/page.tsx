@@ -1,3 +1,5 @@
+'use client'
+
 import Image from 'next/image'
 import Link from 'next/link'
 import {
@@ -16,19 +18,21 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Separator } from '@/components/ui/separator'
-import { cities, currentUser, featuredTrip, money, trips } from '@/lib/data'
-
-const stats = [
-  { label: 'Trips planned', value: '12' },
-  { label: 'Cities visited', value: '28' },
-  { label: 'Days on the road', value: '146' },
-  { label: 'Saved this year', value: money(1840) },
-]
+import { useAuth } from '@/lib/auth'
+import { cities, featuredTrip, money, trips } from '@/lib/data'
 
 export default function DashboardPage() {
+  const { user } = useAuth()
   const upcoming = trips.filter((t) => t.status === 'upcoming' || t.status === 'ongoing')
   const previous = trips.filter((t) => t.status === 'completed')
-  const daysAway = 112
+  const daysAway = 54
+
+  const stats = [
+    { label: 'Trips planned', value: '5' },
+    { label: 'Cities visited', value: '18' },
+    { label: 'Days on the road', value: '42' },
+    { label: 'Saved this season', value: money(12500) },
+  ]
 
   return (
     <AppShell title="Dashboard">
@@ -49,7 +53,7 @@ export default function DashboardPage() {
                 {daysAway} days until departure
               </Badge>
               <h2 className="max-w-xl text-balance font-display text-3xl font-bold leading-tight text-card sm:text-4xl">
-                Good morning, {currentUser.firstName}. {featuredTrip.name} is nearly ready.
+                Good morning, {user.firstName}. {featuredTrip.name} is nearly ready.
               </h2>
               <p className="max-w-lg text-pretty text-sm leading-relaxed text-card/80">
                 {featuredTrip.summary} You have {featuredTrip.cities.length} cities booked and{' '}

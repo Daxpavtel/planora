@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import {
@@ -45,11 +45,12 @@ import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
-import { currentUser, money, trips } from '@/lib/data'
+import { useAuth } from '@/lib/auth'
+import { money, trips } from '@/lib/data'
 
-const interests = ['Food', 'Culture', 'Nature', 'Nightlife', 'Budget', 'Adventure', 'Slow travel']
+const interests = ['Food', 'Culture', 'Nature', 'Heritage', 'Budget', 'Adventure', 'Slow travel']
 const currencies = ['INR (₹)', 'EUR (€)', 'USD ($)', 'GBP (£)']
-const languages = ['English', 'Hindi', 'Gujarati', 'Portuguese', 'Japanese']
+const languages = ['English', 'Hindi', 'Gujarati', 'Marathi', 'Tamil', 'Bengali']
 const paces = ['Relaxed', 'Balanced', 'Packed']
 
 const notifications = [
@@ -68,7 +69,7 @@ const notifications = [
   {
     id: 'prices',
     title: 'Price drops',
-    description: 'Stays and flights for cities you have saved.',
+    description: 'Stays and trains for cities you have saved.',
     on: false,
   },
   {
@@ -80,18 +81,38 @@ const notifications = [
 ]
 
 const sessions = [
-  { id: 's1', device: 'MacBook Pro · Ahmedabad', last: 'Active now', icon: LaptopIcon, current: true },
-  { id: 's2', device: 'iPhone 15 · Ahmedabad', last: '2 hours ago', icon: SmartphoneIcon },
-  { id: 's3', device: 'Chrome · Lisbon', last: '18 Feb 2026', icon: GlobeIcon },
+  { id: 's1', device: 'MacBook Pro · Mumbai', last: 'Active now', icon: LaptopIcon, current: true },
+  { id: 's2', device: 'iPhone 15 · Mumbai', last: '2 hours ago', icon: SmartphoneIcon },
+  { id: 's3', device: 'Chrome · Jaipur', last: '18 Oct 2026', icon: GlobeIcon },
 ]
 
 export default function ProfilePage() {
+  const { user, updateProfile } = useAuth()
   const [saved, setSaved] = useState(false)
+  const [formFirst, setFormFirst] = useState(user.firstName)
+  const [formLast, setFormLast] = useState(user.lastName || '')
+  const [formEmail, setFormEmail] = useState(user.email)
+  const [formCity, setFormCity] = useState(user.homeCity)
+
+  // Sync state if user changes
+  useEffect(() => {
+    setFormFirst(user.firstName)
+    setFormLast(user.lastName || '')
+    setFormEmail(user.email)
+    setFormCity(user.homeCity)
+  }, [user])
+
   const completed = trips.filter((t) => t.status === 'completed').length
   const totalPlanned = trips.reduce((sum, t) => sum + t.estimated, 0)
 
   function onSave(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    updateProfile({
+      firstName: formFirst,
+      lastName: formLast,
+      email: formEmail,
+      homeCity: formCity,
+    })
     setSaved(true)
     setTimeout(() => setSaved(false), 2200)
   }
@@ -101,18 +122,18 @@ export default function ProfilePage() {
       <div className="flex flex-col gap-8">
         <section className="relative overflow-hidden rounded-3xl bg-ink">
           <Image
-            src="/images/lisbon.png"
+            src="https://images.unsplash.com/photo-1599661046289-e31897846e41?auto=format&fit=crop&w=1600&q=80"
             alt=""
             width={1600}
             height={600}
             aria-hidden="true"
-            className="absolute inset-0 size-full object-cover opacity-30"
+            className="absolute inset-0 size-full object-cover opacity-35"
           />
           <div className="relative flex flex-col gap-6 p-6 sm:flex-row sm:items-end sm:p-8">
             <div className="relative w-fit">
               <Avatar className="size-20 ring-4 ring-card/20">
-                <AvatarFallback className="bg-brand-soft text-xl font-semibold text-brand">
-                  {currentUser.initials}
+                <AvatarFallback className="bg-brand-soft text-xl font-bold text-brand">
+                  {user.initials}
                 </AvatarFallback>
               </Avatar>
               <Button
@@ -125,21 +146,21 @@ export default function ProfilePage() {
             </div>
             <div className="flex flex-col gap-1.5">
               <h2 className="font-display text-2xl font-bold text-card sm:text-3xl">
-                {currentUser.name}
+                {user.name}
               </h2>
               <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-card/80">
                 <span className="flex items-center gap-1.5">
                   <MailIcon className="size-4" aria-hidden="true" />
-                  {currentUser.email}
+                  {user.email}
                 </span>
                 <span className="flex items-center gap-1.5">
                   <MapPinIcon className="size-4" aria-hidden="true" />
-                  {currentUser.homeCity}
+                  {user.homeCity}
                 </span>
               </p>
               <div className="flex flex-wrap gap-2 pt-1">
                 <Badge className="border-0 bg-card/15 text-card backdrop-blur">
-                  Member since Nov 2024
+                  Member since 2025
                 </Badge>
                 <Badge className="border-0 bg-card/15 text-card backdrop-blur">
                   {completed} trips completed
@@ -274,11 +295,22 @@ export default function ProfilePage() {
                     <div className="grid gap-4 sm:grid-cols-2">
                       <Field>
                         <FieldLabel htmlFor="p-first">First name</FieldLabel>
-                        <Input id="p-first" defaultValue="Yash" autoComplete="given-name" />
+                        <Input
+                          id="p-first"
+                          value={formFirst}
+                          onChange={(e) => setFormFirst(e.target.value)}
+                          autoComplete="given-name"
+                          required
+                        />
                       </Field>
                       <Field>
                         <FieldLabel htmlFor="p-last">Last name</FieldLabel>
-                        <Input id="p-last" defaultValue="Mehta" autoComplete="family-name" />
+                        <Input
+                          id="p-last"
+                          value={formLast}
+                          onChange={(e) => setFormLast(e.target.value)}
+                          autoComplete="family-name"
+                        />
                       </Field>
                     </div>
                     <div className="grid gap-4 sm:grid-cols-2">
@@ -287,10 +319,12 @@ export default function ProfilePage() {
                         <Input
                           id="p-email"
                           type="email"
-                          defaultValue={currentUser.email}
+                          value={formEmail}
+                          onChange={(e) => setFormEmail(e.target.value)}
                           autoComplete="email"
+                          required
                         />
-                        <FieldDescription>Verified on 4 Dec 2024.</FieldDescription>
+                        <FieldDescription>Primary contact for bookings and trip shares.</FieldDescription>
                       </Field>
                       <Field>
                         <FieldLabel htmlFor="p-phone">Phone number</FieldLabel>
@@ -305,7 +339,12 @@ export default function ProfilePage() {
                     <div className="grid gap-4 sm:grid-cols-2">
                       <Field>
                         <FieldLabel htmlFor="p-city">Home city</FieldLabel>
-                        <Input id="p-city" defaultValue="Ahmedabad" autoComplete="address-level2" />
+                        <Input
+                          id="p-city"
+                          value={formCity}
+                          onChange={(e) => setFormCity(e.target.value)}
+                          autoComplete="address-level2"
+                        />
                       </Field>
                       <Field>
                         <FieldLabel htmlFor="p-lang">Language</FieldLabel>

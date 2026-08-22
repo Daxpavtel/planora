@@ -30,20 +30,96 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { cities, money, type City } from '@/lib/data'
 import { cn } from '@/lib/utils'
 
-const regions = ['All', 'Europe', 'Asia', 'Africa']
+const regions = ['All', 'North India', 'West India', 'South India', 'East India', 'Himalayas']
 const budgets = ['Any', 'Low', 'Medium', 'High']
-const climates = ['Any', 'Mild', 'Warm', 'Tropical', 'Cool', 'Seasonal', 'Mediterranean']
-const interestFilters = ['Food', 'Culture', 'Nature', 'History', 'Beach', 'Adventure']
+const climates = ['Any', 'Warm', 'Tropical', 'Cool', 'Seasonal', 'Pleasant', 'Coastal']
+const interestFilters = ['Heritage', 'Food', 'Palaces', 'Spiritual', 'Beach', 'Adventure', 'Nature']
 
 const highlights: Record<string, string[]> = {
-  lisbon: ['Tram 28 at dawn', 'Time Out Market lunch', 'Belém pastries', 'Day trip to Sintra'],
-  kyoto: ['Fushimi Inari at sunrise', 'Nishiki Market', 'Philosopher’s Path', 'Arashiyama bamboo'],
-  udaipur: ['Lake Pichola boat', 'City Palace', 'Bagore Ki Haveli show', 'Ranakpur drive'],
-  istanbul: ['Bosphorus ferry', 'Kadıköy food walk', 'Basilica Cistern', 'Hammam afternoon'],
-  'cape-town': ['Table Mountain hike', 'Bo-Kaap walk', 'Cape Point drive', 'Constantia wines'],
-  bali: ['Tegallalang terraces', 'Canggu surf lesson', 'Ubud market', 'Sidemen valley'],
-  amsterdam: ['Canal ring cycle', 'Rijksmuseum', 'Noord ferry', 'Vondelpark picnic'],
-  berlin: ['East Side Gallery', 'Museum Island', 'Tempelhofer Feld', 'Kreuzberg street food'],
+  jaipur: [
+    'Amber Fort & Sheesh Mahal guided walk',
+    'Rawat Pyaaz Kachori & clay-pot Lassi',
+    'Hawa Mahal & Johari Bazaar jewelry walk',
+    'Chokhi Dhani royal Dal Baati Churma feast',
+    'Hot Air Balloon safari over the Aravallis',
+  ],
+  udaipur: [
+    'Lake Pichola sunset boat cruise to Jag Mandir',
+    'City Palace & crystal gallery royal walk',
+    'Dharohar folk dance at Bagore Ki Haveli',
+    'Rooftop Mewari thali dining overlooking the lake',
+    'Saheliyon Ki Bari fountain gardens',
+  ],
+  varanasi: [
+    'Dashashwamedh Ghat grand evening Ganga Aarti',
+    'Sunrise wooden boat ride along the 84 ghats',
+    'Kashi Chaat Bhandar Tamatar Chaat tasting',
+    'Authentic Banarasi Paan & Rabri Malaiyo',
+    'Sarnath historic Buddhist stupa excursion',
+  ],
+  goa: [
+    'Palolem Beach kayaking & sunset dolphin cruise',
+    'Authentic Goan Fish Curry Thali & Bebinca',
+    'UNESCO heritage Basilica of Bom Jesus',
+    'Dudhsagar Waterfalls jungle jeep safari',
+    'Fontainhas Latin Quarter colorful photowalk',
+  ],
+  mumbai: [
+    'Girgaon Chowpatty street food crawl (Vada Pav, Pav Bhaji)',
+    'Marine Drive sunset stroll & Queen’s Necklace lights',
+    'Gateway of India & Elephanta rock caves ferry',
+    'Colaba Causeway shopping & Leopold Cafe stop',
+    'Bandra Bandstand & Portuguese fort walk',
+  ],
+  delhi: [
+    'Chandni Chowk food walk (Paranthe, Kebabs & Jalebi)',
+    'Qutub Minar & Mehrauli Archaeological Park',
+    'Humayun’s Tomb & Sunder Nursery garden stroll',
+    'India Gate & Kartavya Path evening walk',
+    'Red Fort historic ramparts & sound-and-light show',
+  ],
+  bengaluru: [
+    'Vidyarthi Bhavan crispy Benne Masala Dosa & Filter Kaapi',
+    'Lalbagh Botanical Garden & 1889 Glass House',
+    'Bangalore Palace Tudor architecture tour',
+    'Indiranagar craft microbrewery crawl',
+    'Cubbon Park lush morning tree-canopy walk',
+  ],
+  kochi: [
+    'Fort Kochi Chinese fishing nets & sunset watch',
+    'Alleppey day houseboat cruise through backwaters',
+    'Authentic Kerala Sadhya served on banana leaf',
+    'Mattancherry Dutch Palace & Jew Town spice shops',
+    'Kathakali theatrical performance & Kalaripayattu',
+  ],
+  manali: [
+    'Solang Valley paragliding & Beas river rafting',
+    'Rohtang Pass & Atal Tunnel high mountain snow trip',
+    'Authentic Himachali Siddu & pan-fried river trout',
+    'Old Manali bohemian cafe & live music trail',
+    'Jogini Waterfall forest hike & Hadimba Temple',
+  ],
+  kolkata: [
+    'Victoria Memorial marble palace & Maidan walk',
+    'Legendary KC Das Rosogolla & Mishti Doi tasting',
+    'College Street historic Indian Coffee House',
+    'Princep Ghat sunset boat ride under Vidyasagar Setu',
+    'Park Street authentic Kolkata Kathi Roll trail',
+  ],
+  agra: [
+    'Sunrise Taj Mahal guided monument & photography tour',
+    'Agra Fort Diwan-i-Khas & Sheesh Mahal',
+    'Panchhi Petha & hot Bedmi Puri breakfast',
+    'Mehtab Bagh sunset Taj Mahal reflection view',
+    'Fatehpur Sikri Mughal ghost city day trip',
+  ],
+  amritsar: [
+    'Golden Temple (Harmandir Sahib) & sacred community Langar',
+    'Wagah Border patriotic beating retreat ceremony',
+    'Kesar Da Dhaba crispy Amritsari Kulcha & Dal Makhani',
+    'Jallianwala Bagh historic national memorial',
+    'Gobindgarh Fort cultural light-and-sound show',
+  ],
 }
 
 export default function ExplorePage() {
@@ -53,8 +129,8 @@ export default function ExplorePage() {
   const [climate, setClimate] = useState('Any')
   const [interests, setInterests] = useState<string[]>([])
   const [layout, setLayout] = useState('Grid')
-  const [saved, setSaved] = useState<string[]>(['kyoto'])
-  const [added, setAdded] = useState<string[]>(['amsterdam'])
+  const [saved, setSaved] = useState<string[]>(['jaipur'])
+  const [added, setAdded] = useState<string[]>(['udaipur'])
   const [compare, setCompare] = useState<string[]>([])
   const [detail, setDetail] = useState<City | null>(null)
 

@@ -8,7 +8,6 @@ import {
   CalendarDaysIcon,
   CompassIcon,
   HouseIcon,
-  LifeBuoyIcon,
   LogOutIcon,
   MapIcon,
   SettingsIcon,
@@ -40,20 +39,19 @@ export const planNavItems: NavItem[] = [
   { href: '/explore', label: 'Explore Cities', icon: CompassIcon },
   { href: '/activities', label: 'Activities', icon: BookmarkIcon },
   { href: '/calendar', label: 'Calendar', icon: CalendarDaysIcon },
-  { href: '/shared/european-summer-escape', label: 'Public View', icon: Share2Icon },
+  { href: '/shared/rajasthan-royal-heritage', label: 'Public View', icon: Share2Icon },
 ]
 
 export const accountNavItems: NavItem[] = [
   { href: '/profile', label: 'Profile & Settings', icon: UserIcon },
   { href: '/admin', label: 'Admin Panel', icon: SettingsIcon },
-  { href: '/', label: 'All Screens', icon: LifeBuoyIcon },
   { href: '/login', label: 'Log out', icon: LogOutIcon },
 ]
 
 export function isRouteActive(pathname: string, href: string): boolean {
   if (href === '/') return pathname === '/'
   if (href === '/dashboard') return pathname === '/dashboard'
-  if (href === '/shared/european-summer-escape') return pathname.startsWith('/shared')
+  if (href === '/shared/rajasthan-royal-heritage') return pathname.startsWith('/shared')
   if (href === '/login') return pathname === '/login'
   return pathname === href || pathname.startsWith(`${href}/`)
 }
@@ -68,7 +66,7 @@ interface SidebarContextValue {
 
 const SidebarContext = React.createContext<SidebarContextValue | undefined>(undefined)
 
-const STORAGE_KEY = 'globetrotter_sidebar_expanded'
+const STORAGE_KEY = 'planora_sidebar_expanded'
 
 export function SidebarProvider({ children }: { children: React.ReactNode }) {
   const [expanded, setExpandedState] = React.useState<boolean>(false)
@@ -235,7 +233,7 @@ export function Sidebar() {
       >
         <Link
           href="/dashboard"
-          aria-label="GlobeTrotter dashboard"
+          aria-label="Planora dashboard"
           className={cn(
             'flex h-10 items-center transition-all',
             expanded ? 'px-2' : 'justify-center',
