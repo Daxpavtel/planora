@@ -601,7 +601,7 @@ export default function NewTripPage() {
                   <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4">
                     <div className="flex items-center justify-between">
                       <span className="font-display text-sm font-bold text-ink">Estimated Total Cost Breakdown</span>
-                      <span className="tabular font-display text-lg font-bold text-brand">{money(smartBudget.total)}</span>
+                      <span className="tabular font-display text-lg font-bold text-brand">{money(smartBudget.calculatedTotal)}</span>
                     </div>
 
                     <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
@@ -619,17 +619,17 @@ export default function NewTripPage() {
                       </div>
                       <div className="rounded-lg bg-muted/60 p-2.5">
                         <p className="text-muted-foreground font-medium">🚆 Transport</p>
-                        <p className="font-bold text-ink text-sm mt-0.5">{money(smartBudget.transport)}</p>
+                        <p className="font-bold text-ink text-sm mt-0.5">{money(smartBudget.transit)}</p>
                       </div>
                     </div>
 
                     {/* Feasibility Alert */}
-                    {targetBudget < smartBudget.total * 0.75 ? (
+                    {targetBudget < smartBudget.calculatedTotal * 0.75 ? (
                       <p className="flex items-center gap-1.5 text-xs font-semibold text-warning">
                         <TriangleAlertIcon className="size-4 shrink-0 text-warning" aria-hidden="true" />
-                        Target budget is low for these cities ({stopCities.map((c) => c.name).join(', ')}) & {travellers} travellers. Consider budgeting at least {money(smartBudget.total)}.
+                        Target budget is low for these cities ({stopCities.map((c) => c.name).join(', ')}) & {travellers} travellers. Consider budgeting at least {money(smartBudget.calculatedTotal)}.
                       </p>
-                    ) : targetBudget > smartBudget.total * 1.3 ? (
+                    ) : targetBudget > smartBudget.calculatedTotal * 1.3 ? (
                       <p className="flex items-center gap-1.5 text-xs font-semibold text-success">
                         <CheckIcon className="size-4 shrink-0 text-success" aria-hidden="true" />
                         Generous budget! You have plenty of buffer for luxury stays, fine dining & experiences.
