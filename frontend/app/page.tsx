@@ -13,14 +13,15 @@ const screens = [
   { href: '/dashboard', label: 'Dashboard', n: '03' },
   { href: '/trips/new', label: 'Create new trip', n: '04' },
   { href: '/trips', label: 'My trips', n: '05' },
-  { href: '/explore', label: 'City search', n: '06' },
-  { href: '/activities', label: 'Activity search', n: '07' },
-  { href: '/trips/european-summer-escape/build', label: 'Itinerary builder', n: '08' },
-  { href: '/trips/european-summer-escape', label: 'Itinerary + budget', n: '09' },
-  { href: '/calendar', label: 'Calendar view', n: '10' },
-  { href: '/shared/european-summer-escape', label: 'Public itinerary', n: '11' },
-  { href: '/profile', label: 'Profile & settings', n: '12' },
-  { href: '/admin', label: 'Admin panel', n: '13' },
+  { href: '/community', label: 'Community tab (New)', n: '06' },
+  { href: '/explore', label: 'City search', n: '07' },
+  { href: '/activities', label: 'Activity search', n: '08' },
+  { href: '/trips/european-summer-escape/build', label: 'Itinerary builder', n: '09' },
+  { href: '/trips/european-summer-escape', label: 'Itinerary + budget', n: '10' },
+  { href: '/calendar', label: 'Calendar view', n: '11' },
+  { href: '/shared/european-summer-escape', label: 'Public itinerary', n: '12' },
+  { href: '/profile', label: 'Profile & settings', n: '13' },
+  { href: '/admin', label: 'Admin panel', n: '14' },
 ]
 
 const pillars = [

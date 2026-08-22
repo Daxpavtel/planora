@@ -14,6 +14,7 @@ import {
   SettingsIcon,
   Share2Icon,
   UserIcon,
+  UsersIcon,
 } from 'lucide-react'
 import { LogoMark, Wordmark } from '@/components/logo'
 import { Separator } from '@/components/ui/separator'
@@ -35,6 +36,7 @@ export type NavItem = {
 export const planNavItems: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: HouseIcon },
   { href: '/trips', label: 'My Trips', icon: MapIcon },
+  { href: '/community', label: 'Community', icon: UsersIcon },
   { href: '/explore', label: 'Explore Cities', icon: CompassIcon },
   { href: '/activities', label: 'Activities', icon: BookmarkIcon },
   { href: '/calendar', label: 'Calendar', icon: CalendarDaysIcon },

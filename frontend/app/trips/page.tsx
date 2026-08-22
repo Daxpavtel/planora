@@ -90,6 +90,59 @@ export default function TripsPage() {
 
           {groups.map((g) => {
             const list = filtered.filter((t) => g.statuses.includes(t.status))
+            if (g.id === 'all' && list.length > 0) {
+              const ongoingList = list.filter((t) => t.status === 'ongoing')
+              const upcomingList = list.filter((t) => t.status === 'upcoming' || t.status === 'draft')
+              const completedList = list.filter((t) => t.status === 'completed')
+
+              return (
+                <TabsContent key={g.id} value={g.id} className="flex flex-col gap-8">
+                  {ongoingList.length > 0 && (
+                    <section className="flex flex-col gap-3">
+                      <div className="flex items-center gap-2">
+                        <span className="size-2.5 rounded-full bg-success animate-pulse" />
+                        <h3 className="font-display text-lg font-bold text-ink">Ongoing Trips</h3>
+                        <span className="text-xs text-muted-foreground">({ongoingList.length})</span>
+                      </div>
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                        {ongoingList.map((trip) => (
+                          <TripCard key={trip.id} trip={trip} />
+                        ))}
+                      </div>
+                    </section>
+                  )}
+
+                  {upcomingList.length > 0 && (
+                    <section className="flex flex-col gap-3">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-display text-lg font-bold text-ink">Upcoming Trips & Drafts</h3>
+                        <span className="text-xs text-muted-foreground">({upcomingList.length})</span>
+                      </div>
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                        {upcomingList.map((trip) => (
+                          <TripCard key={trip.id} trip={trip} />
+                        ))}
+                      </div>
+                    </section>
+                  )}
+
+                  {completedList.length > 0 && (
+                    <section className="flex flex-col gap-3">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-display text-lg font-bold text-ink">Completed Trips</h3>
+                        <span className="text-xs text-muted-foreground">({completedList.length})</span>
+                      </div>
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                        {completedList.map((trip) => (
+                          <TripCard key={trip.id} trip={trip} />
+                        ))}
+                      </div>
+                    </section>
+                  )}
+                </TabsContent>
+              )
+            }
+
             return (
               <TabsContent key={g.id} value={g.id} className="flex flex-col gap-4">
                 {list.length === 0 ? (

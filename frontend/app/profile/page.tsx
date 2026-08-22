@@ -173,6 +173,85 @@ export default function ProfilePage() {
           ))}
         </dl>
 
+        {/* Preplanned Trips Section (Wireframe Screen 7) */}
+        <section className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <h3 className="font-display text-lg font-bold text-ink">Pre-planned Trips</h3>
+            <Button variant="ghost" size="sm" render={<Link href="/trips" />}>
+              View all trips
+            </Button>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {trips
+              .filter((t) => t.status === 'upcoming' || t.status === 'draft' || t.status === 'ongoing')
+              .slice(0, 3)
+              .map((trip) => (
+                <Card key={trip.id} className="overflow-hidden">
+                  <div className="relative">
+                    <Image
+                      src={trip.cover || '/placeholder.svg'}
+                      alt={trip.name}
+                      width={400}
+                      height={200}
+                      className="h-28 w-full object-cover"
+                    />
+                    <Badge className="absolute left-2.5 top-2.5 border-0 bg-ink/80 text-card backdrop-blur text-[10px]">
+                      {trip.status.toUpperCase()}
+                    </Badge>
+                  </div>
+                  <CardHeader className="p-3 pb-1">
+                    <CardTitle className="text-sm font-bold text-ink">{trip.name}</CardTitle>
+                    <CardDescription className="text-xs">{trip.dateLabel} · {trip.cities.join(', ')}</CardDescription>
+                  </CardHeader>
+                  <CardFooter className="p-3 pt-2">
+                    <Button variant="outline" size="sm" className="w-full" render={<Link href={`/trips/${trip.id}`} />}>
+                      View Itinerary
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
+          </div>
+        </section>
+
+        {/* Previous Trips Section (Wireframe Screen 7) */}
+        <section className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <h3 className="font-display text-lg font-bold text-ink">Previous Trips</h3>
+            <span className="text-xs text-muted-foreground">{completed} completed</span>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {trips
+              .filter((t) => t.status === 'completed')
+              .map((trip) => (
+                <Card key={trip.id} className="overflow-hidden">
+                  <div className="relative">
+                    <Image
+                      src={trip.cover || '/placeholder.svg'}
+                      alt={trip.name}
+                      width={400}
+                      height={200}
+                      className="h-28 w-full object-cover grayscale transition-all hover:grayscale-0"
+                    />
+                    <Badge variant="secondary" className="absolute left-2.5 top-2.5 border-0 bg-card/90 text-ink backdrop-blur text-[10px]">
+                      COMPLETED
+                    </Badge>
+                  </div>
+                  <CardHeader className="p-3 pb-1">
+                    <CardTitle className="text-sm font-bold text-ink">{trip.name}</CardTitle>
+                    <CardDescription className="text-xs">{trip.dateLabel} · {trip.cities.join(', ')}</CardDescription>
+                  </CardHeader>
+                  <CardFooter className="p-3 pt-2">
+                    <Button variant="outline" size="sm" className="w-full" render={<Link href={`/trips/${trip.id}`} />}>
+                      View Memory
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
+          </div>
+        </section>
+
+        <Separator />
+
         <Tabs defaultValue="details">
           <TabsList className="w-full justify-start overflow-x-auto sm:w-fit">
             <TabsTrigger value="details">Details</TabsTrigger>
@@ -337,9 +416,9 @@ export default function ProfilePage() {
                       </Select>
                     </Field>
                     <Field>
-                      <FieldLabel htmlFor="p-budget">Typical daily budget</FieldLabel>
-                      <Input id="p-budget" type="number" defaultValue={90} step={10} />
-                      <FieldDescription>Per person, excluding flights.</FieldDescription>
+                      <FieldLabel htmlFor="p-budget">Typical total trip budget (€)</FieldLabel>
+                      <Input id="p-budget" type="number" defaultValue={2500} step={100} />
+                      <FieldDescription>Total budget for all travellers & stops per trip.</FieldDescription>
                     </Field>
                     <Separator />
                     {[

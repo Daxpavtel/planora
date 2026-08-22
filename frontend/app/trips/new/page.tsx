@@ -71,6 +71,8 @@ export default function NewTripPage() {
   const [pending, setPending] = useState(false)
   const [saved, setSaved] = useState<'idle' | 'saving' | 'saved'>('saved')
 
+  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], [])
+
   const [name, setName] = useState('')
   const [start, setStart] = useState('2026-06-12')
   const [end, setEnd] = useState('2026-06-24')
@@ -84,18 +86,46 @@ export default function NewTripPage() {
   const [picked, setPicked] = useState<string[]>(['Food', 'Culture'])
   const [flexible, setFlexible] = useState(true)
   const [touchedName, setTouchedName] = useState(false)
+  const [customTotalBudget, setCustomTotalBudget] = useState<number | null>(null)
 
   const nightCount = nights(start, end)
-  const dateConflict = Boolean(start && end) && nightCount <= 0
+  const isPastStart = Boolean(start && start < todayStr)
+  const dateConflict = Boolean(start && end) && (nightCount <= 0 || isPastStart)
   const nameError = touchedName && name.trim().length < 3
   const stopCities = useMemo(
     () => stops.map((id) => cities.find((c) => c.id === id)).filter(Boolean) as typeof cities,
     [stops],
   )
-  const estimate = stopCities.reduce(
-    (total, city) => total + city.dailyCost * travellers * Math.max(2, Math.round(nightCount / Math.max(1, stopCities.length))),
-    0,
-  )
+
+  // Smart Useful Budget Calculation Logic
+  const smartBudget = useMemo(() => {
+    const styleMultiplier = {
+      Budget: 0.75,
+      Balanced: 1.0,
+      Comfort: 1.45,
+      Luxury: 2.3,
+    }[style]
+
+    const paceMultiplier = pace.startsWith('Packed') ? 1.25 : pace.startsWith('Relaxed') ? 0.85 : 1.0
+    const nightsTotal = Math.max(1, nightCount)
+    const roomUnits = Math.max(1, Math.ceil(travellers / 2))
+
+    const avgCityDailyCost =
+      stopCities.length > 0
+        ? stopCities.reduce((sum, c) => sum + c.dailyCost, 0) / stopCities.length
+        : 80
+
+    const stays = Math.round(nightsTotal * (avgCityDailyCost * 1.1) * roomUnits * styleMultiplier)
+    const meals = Math.round(nightsTotal * 35 * travellers * styleMultiplier * paceMultiplier)
+    const activitiesCost = Math.round(nightsTotal * 25 * travellers * styleMultiplier * paceMultiplier)
+    const transferLegs = Math.max(1, stopCities.length)
+    const transport = Math.round(transferLegs * 65 * travellers * styleMultiplier)
+
+    const total = stays + meals + activitiesCost + transport
+    return { stays, meals, activities: activitiesCost, transport, total }
+  }, [stopCities, nightCount, travellers, style, pace])
+
+  const targetBudget = customTotalBudget ?? smartBudget.total
 
   function markDirty() {
     setSaved('saving')
@@ -105,7 +135,7 @@ export default function NewTripPage() {
   function goNext() {
     if (step === 1) {
       setTouchedName(true)
-      if (name.trim().length < 3 || dateConflict) return
+      if (name.trim().length < 3 || dateConflict || isPastStart) return
     }
     if (step === 2 && stops.length === 0) return
     if (step === 4) {
@@ -235,23 +265,29 @@ export default function NewTripPage() {
                   </Field>
 
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <Field>
+                    <Field data-invalid={isPastStart || undefined}>
                       <FieldLabel htmlFor="start">Start date</FieldLabel>
                       <Input
                         id="start"
                         type="date"
+                        min={todayStr}
                         value={start}
+                        aria-invalid={isPastStart || undefined}
                         onChange={(e) => {
                           setStart(e.target.value)
                           markDirty()
                         }}
                       />
+                      {isPastStart ? (
+                        <FieldError>Start date cannot be in the past. Select today or a future date.</FieldError>
+                      ) : null}
                     </Field>
                     <Field data-invalid={dateConflict || undefined}>
                       <FieldLabel htmlFor="end">End date</FieldLabel>
                       <Input
                         id="end"
                         type="date"
+                        min={start || todayStr}
                         value={end}
                         aria-invalid={dateConflict || undefined}
                         onChange={(e) => {
@@ -260,7 +296,7 @@ export default function NewTripPage() {
                         }}
                       />
                       {dateConflict ? (
-                        <FieldError>The end date needs to be after the start date.</FieldError>
+                        <FieldError>The end date needs to be after the start date and cannot be in the past.</FieldError>
                       ) : (
                         <FieldDescription>{nightCount} nights on the road.</FieldDescription>
                       )}
@@ -507,13 +543,64 @@ export default function NewTripPage() {
                   </Field>
 
                   <Field>
-                    <FieldLabel htmlFor="target">Target budget per traveller</FieldLabel>
-                    <Input id="target" type="number" defaultValue={1200} min={0} step={50} />
+                    <FieldLabel htmlFor="target">Target Total Budget (€)</FieldLabel>
+                    <Input
+                      id="target"
+                      type="number"
+                      value={targetBudget}
+                      min={100}
+                      step={100}
+                      onChange={(e) => setCustomTotalBudget(Number(e.target.value))}
+                    />
                     <FieldDescription>
-                      Estimated from your stops: {money(Math.round(estimate / Math.max(1, travellers)))}{' '}
-                      per traveller.
+                      Total calculated budget for all {travellers} traveller{travellers > 1 ? 's' : ''} across {nightCount} nights & {stops.length} city stop{stops.length === 1 ? '' : 's'}.
                     </FieldDescription>
                   </Field>
+
+                  {/* Useful Smart Budget Breakdown Card */}
+                  <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4">
+                    <div className="flex items-center justify-between">
+                      <span className="font-display text-sm font-bold text-ink">Estimated Total Cost Breakdown</span>
+                      <span className="tabular font-display text-lg font-bold text-brand">{money(smartBudget.total)}</span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
+                      <div className="rounded-lg bg-muted/60 p-2.5">
+                        <p className="text-muted-foreground font-medium">🏨 Stays</p>
+                        <p className="font-bold text-ink text-sm mt-0.5">{money(smartBudget.stays)}</p>
+                      </div>
+                      <div className="rounded-lg bg-muted/60 p-2.5">
+                        <p className="text-muted-foreground font-medium">🍕 Dining</p>
+                        <p className="font-bold text-ink text-sm mt-0.5">{money(smartBudget.meals)}</p>
+                      </div>
+                      <div className="rounded-lg bg-muted/60 p-2.5">
+                        <p className="text-muted-foreground font-medium">🎟️ Activities</p>
+                        <p className="font-bold text-ink text-sm mt-0.5">{money(smartBudget.activities)}</p>
+                      </div>
+                      <div className="rounded-lg bg-muted/60 p-2.5">
+                        <p className="text-muted-foreground font-medium">🚆 Transport</p>
+                        <p className="font-bold text-ink text-sm mt-0.5">{money(smartBudget.transport)}</p>
+                      </div>
+                    </div>
+
+                    {/* Feasibility Alert */}
+                    {targetBudget < smartBudget.total * 0.75 ? (
+                      <p className="flex items-center gap-1.5 text-xs font-semibold text-warning">
+                        <TriangleAlertIcon className="size-4 shrink-0 text-warning" aria-hidden="true" />
+                        Target budget is low for these cities ({stopCities.map((c) => c.name).join(', ')}) & {travellers} travellers. Consider budgeting at least {money(smartBudget.total)}.
+                      </p>
+                    ) : targetBudget > smartBudget.total * 1.3 ? (
+                      <p className="flex items-center gap-1.5 text-xs font-semibold text-success">
+                        <CheckIcon className="size-4 shrink-0 text-success" aria-hidden="true" />
+                        Generous budget! You have plenty of buffer for luxury stays, fine dining & experiences.
+                      </p>
+                    ) : (
+                      <p className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+                        <CheckIcon className="size-4 shrink-0 text-success" aria-hidden="true" />
+                        Realistic total budget tailored to your travel style ({style}) and daily pace.
+                      </p>
+                    )}
+                  </div>
 
                   <label className="flex items-start gap-2 text-sm text-muted-foreground">
                     <Checkbox
@@ -537,6 +624,7 @@ export default function NewTripPage() {
                       ['Travel style', style],
                       ['Privacy', privacyOptions.find((p) => p.value === privacy)?.label ?? ''],
                       ['Pace', pace],
+                      ['Target Total Budget', money(targetBudget)],
                       ['Interests', picked.join(', ') || 'None yet'],
                     ].map(([label, value]) => (
                       <div key={label} className="rounded-xl border border-border bg-card p-3">
@@ -590,8 +678,8 @@ export default function NewTripPage() {
                     <dd className="tabular font-semibold text-ink">{travellers}</dd>
                   </div>
                   <div className="flex items-center justify-between gap-2">
-                    <dt className="text-muted-foreground">Rough estimate</dt>
-                    <dd className="tabular font-semibold text-ink">{money(estimate)}</dd>
+                    <dt className="text-muted-foreground">Total Budget</dt>
+                    <dd className="tabular font-semibold text-ink">{money(targetBudget)}</dd>
                   </div>
                 </dl>
                 <Badge variant="secondary" className="w-fit">

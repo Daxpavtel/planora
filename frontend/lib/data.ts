@@ -694,3 +694,136 @@ export const cityColors: Record<string, string> = {
 export function money(amount: number, currency = '€') {
   return `${currency}${amount.toLocaleString('en-US')}`
 }
+
+export type CommunityReview = {
+  id: string
+  user: string
+  avatar: string
+  rating: number
+  comment: string
+  date: string
+}
+
+export type CommunityTrip = {
+  id: string
+  title: string
+  author: string
+  authorAvatar: string
+  authorRole: string
+  rating: number
+  reviewsCount: number
+  cover: string
+  cities: string[]
+  days: number
+  budget: number
+  style: 'Budget' | 'Balanced' | 'Comfort' | 'Luxury'
+  bookmarked: boolean
+  likes: number
+  description: string
+  reviews: CommunityReview[]
+}
+
+export const communityTrips: CommunityTrip[] = [
+  {
+    id: 'c-1',
+    title: 'European Summer Escape',
+    author: 'Aarti Rao',
+    authorAvatar: 'AR',
+    authorRole: 'Pro Traveler · 14 trips',
+    rating: 4.9,
+    reviewsCount: 42,
+    cover: '/images/paris.png',
+    cities: ['Paris', 'Amsterdam', 'Berlin'],
+    days: 12,
+    budget: 2840,
+    style: 'Balanced',
+    bookmarked: true,
+    likes: 328,
+    description: 'A 12-day route across three classic European cities with walk-friendly days, food markets, and night trains.',
+    reviews: [
+      { id: 'r1', user: 'Sam K.', avatar: 'SK', rating: 5, comment: 'Followed the Paris days step-by-step. The Marché d’Aligre breakfast tip saved us so much money!', date: '2 days ago' },
+      { id: 'r2', user: 'Yash M.', avatar: 'YM', rating: 5, comment: 'Super well structured. The day transitions between Paris and Amsterdam are seamless.', date: '1 week ago' },
+    ],
+  },
+  {
+    id: 'c-2',
+    title: 'Kyoto & Osaka Cherry Blossom Route',
+    author: 'Mei Tan',
+    authorAvatar: 'MT',
+    authorRole: 'Local Expert · Kyoto',
+    rating: 4.8,
+    reviewsCount: 29,
+    cover: '/images/kyoto.png',
+    cities: ['Kyoto', 'Osaka'],
+    days: 8,
+    budget: 1960,
+    style: 'Comfort',
+    bookmarked: false,
+    likes: 215,
+    description: 'Early morning temple walks to beat the crowds, street food in Dotonbori, and scenic train transfers.',
+    reviews: [
+      { id: 'r3', user: 'Nina P.', avatar: 'NP', rating: 5, comment: 'Fushimi Inari at 6am recommendation was spot-on. We had the whole shrine to ourselves!', date: '3 days ago' },
+    ],
+  },
+  {
+    id: 'c-3',
+    title: 'Lisbon 4-Day Coastal & Tiled Streets',
+    author: 'Sam Keller',
+    authorAvatar: 'SK',
+    authorRole: 'Explorer · 8 trips',
+    rating: 4.7,
+    reviewsCount: 19,
+    cover: '/images/lisbon.png',
+    cities: ['Lisbon', 'Sintra'],
+    days: 4,
+    budget: 720,
+    style: 'Budget',
+    bookmarked: true,
+    likes: 184,
+    description: 'Budget-friendly 4 days around Alfama, Tram 28 early morning, sunset at Miradouro, and a day trip to Sintra.',
+    reviews: [
+      { id: 'r4', user: 'Diego A.', avatar: 'DA', rating: 4, comment: 'Great budget itinerary. Sintra day trip timing was very accurate.', date: '5 days ago' },
+    ],
+  },
+  {
+    id: 'c-4',
+    title: 'Rajasthan Royal Heritage & Lake Trail',
+    author: 'Yash Mehta',
+    authorAvatar: 'YM',
+    authorRole: 'Trip Architect',
+    rating: 5.0,
+    reviewsCount: 56,
+    cover: '/images/udaipur.png',
+    cities: ['Udaipur', 'Jodhpur'],
+    days: 9,
+    budget: 1120,
+    style: 'Balanced',
+    bookmarked: false,
+    likes: 410,
+    description: 'Lakeside palaces, rooftop dining overlooking City Palace, and stepwell sunset spots across Udaipur and Jodhpur.',
+    reviews: [
+      { id: 'r5', user: 'Aarti R.', avatar: 'AR', rating: 5, comment: 'The boat ride on Lake Pichola at sunset is unforgettable!', date: 'Yesterday' },
+    ],
+  },
+  {
+    id: 'c-5',
+    title: 'Istanbul Bosphorus & Food Crawl',
+    author: 'Nina Patel',
+    authorAvatar: 'NP',
+    authorRole: 'Food & Culture Guide',
+    rating: 4.9,
+    reviewsCount: 34,
+    cover: '/images/istanbul.png',
+    cities: ['Istanbul'],
+    days: 5,
+    budget: 980,
+    style: 'Balanced',
+    bookmarked: false,
+    likes: 276,
+    description: 'Ferries between continents, traditional hammam session, Spice Bazaar walks, and Kadıköy food tasting.',
+    reviews: [
+      { id: 'r6', user: 'Mei T.', avatar: 'MT', rating: 5, comment: 'The Kadıköy food walk notes were gold. Best breakfast spread ever!', date: '4 days ago' },
+    ],
+  },
+]
+
