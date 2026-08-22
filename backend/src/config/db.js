@@ -16,8 +16,7 @@ const dbConfig = {
   decimalNumbers: true,
   dateStrings: true,
   ssl: {
-    minVersion: 'TLSv1.2',
-    rejectUnauthorized: true
+    rejectUnauthorized: false
   }
 };
 
@@ -254,4 +253,5 @@ module.exports = {
   getPool,
   initializeDatabase,
 };
+
 
