@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -16,6 +16,7 @@ import {
   TriangleAlertIcon,
   UsersIcon,
 } from 'lucide-react'
+import { toast } from 'sonner'
 import { AppShell } from '@/components/app-shell'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -41,7 +42,8 @@ import { Separator } from '@/components/ui/separator'
 import { Spinner } from '@/components/ui/spinner'
 import { Textarea } from '@/components/ui/textarea'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
-import { cities, money } from '@/lib/data'
+import { citiesApi, tripsApi } from '@/lib/api'
+import { money, type City } from '@/lib/data'
 import { cn } from '@/lib/utils'
 
 const steps = [
@@ -73,6 +75,7 @@ export default function NewTripPage() {
 
   const todayStr = useMemo(() => new Date().toISOString().split('T')[0], [])
 
+  const [availableCities, setAvailableCities] = useState<City[]>([])
   const [name, setName] = useState('')
   const [start, setStart] = useState('2026-06-12')
   const [end, setEnd] = useState('2026-06-24')
@@ -81,23 +84,41 @@ export default function NewTripPage() {
   const [travellers, setTravellers] = useState(2)
   const [style, setStyle] = useState<(typeof styles)[number]>('Balanced')
   const [privacy, setPrivacy] = useState('private')
-  const [stops, setStops] = useState(['lisbon', 'kyoto'])
+  const [stops, setStops] = useState<string[]>(['1', '2'])
   const [pace, setPace] = useState('Balanced — two or three anchors a day')
   const [picked, setPicked] = useState<string[]>(['Food', 'Culture'])
   const [flexible, setFlexible] = useState(true)
   const [touchedName, setTouchedName] = useState(false)
   const [customTotalBudget, setCustomTotalBudget] = useState<number | null>(null)
 
+  // Load cities from backend
+  useEffect(() => {
+    async function loadCities() {
+      try {
+        const data = await citiesApi.getAll()
+        setAvailableCities(data)
+        if (data.length >= 2) {
+          setStops([String(data[0].city_id || data[0].id), String(data[1].city_id || data[1].id)])
+        }
+      } catch (err) {
+        console.warn('Fallback cities loading:', err)
+      }
+    }
+    loadCities()
+  }, [])
+
   const nightCount = nights(start, end)
   const isPastStart = Boolean(start && start < todayStr)
   const dateConflict = Boolean(start && end) && (nightCount <= 0 || isPastStart)
   const nameError = touchedName && name.trim().length < 3
-  const stopCities = useMemo(
-    () => stops.map((id) => cities.find((c) => c.id === id)).filter(Boolean) as typeof cities,
-    [stops],
-  )
 
-  // Smart Useful Budget Calculation Logic
+  const stopCities = useMemo(() => {
+    return stops
+      .map((id) => availableCities.find((c) => String(c.city_id || c.id) === String(id)))
+      .filter(Boolean) as City[]
+  }, [stops, availableCities])
+
+  // Smart Budget Calculation Logic
   const smartBudget = useMemo(() => {
     const styleMultiplier = {
       Budget: 0.75,
@@ -112,7 +133,7 @@ export default function NewTripPage() {
 
     const avgCityDailyCost =
       stopCities.length > 0
-        ? stopCities.reduce((sum, c) => sum + c.dailyCost, 0) / stopCities.length
+        ? stopCities.reduce((sum, c) => sum + (c.dailyCost || 80), 0) / stopCities.length
         : 80
 
     const stays = Math.round(nightsTotal * (avgCityDailyCost * 1.1) * roomUnits * styleMultiplier)
@@ -132,6 +153,29 @@ export default function NewTripPage() {
     setTimeout(() => setSaved('saved'), 600)
   }
 
+  // Submit Trip Creation to MySQL Backend API
+  async function handleCreateTrip() {
+    try {
+      setPending(true)
+      const res = await tripsApi.create({
+        trip_name: name || 'European Summer Escape',
+        start_date: start,
+        end_date: end,
+        description: description || 'Scenic tour planned with Planora.',
+        cover_photo_url: stopCities[0]?.image || '/images/paris.png',
+        stops: stops.map((id) => Number(id) || 1),
+        style,
+      })
+
+      toast.success('Trip created and saved to database successfully!')
+      const newId = res.trip_id || res.id || 1
+      router.push(`/trips/${newId}/build`)
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to create trip.')
+      setPending(false)
+    }
+  }
+
   function goNext() {
     if (step === 1) {
       setTouchedName(true)
@@ -139,8 +183,7 @@ export default function NewTripPage() {
     }
     if (step === 2 && stops.length === 0) return
     if (step === 4) {
-      setPending(true)
-      setTimeout(() => router.push('/trips/european-summer-escape/build'), 900)
+      handleCreateTrip()
       return
     }
     setStep((s) => Math.min(4, s + 1))
@@ -167,7 +210,7 @@ export default function NewTripPage() {
             </Button>
             <h2 className="font-display text-2xl font-bold text-ink">Plan a new trip</h2>
             <p className="text-sm text-muted-foreground">
-              Four short steps. You can change everything later in the builder.
+              Four short steps. Submits directly to your MySQL database and configures day stops automatically.
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -362,23 +405,6 @@ export default function NewTripPage() {
                   </Field>
 
                   <Field>
-                    <FieldLabel htmlFor="cover">Cover image</FieldLabel>
-                    <label
-                      htmlFor="cover"
-                      className="flex min-h-24 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-input bg-muted/40 px-4 py-5 text-center"
-                    >
-                      <CloudUploadIcon className="size-5 text-muted-foreground" aria-hidden="true" />
-                      <span className="text-sm font-medium text-ink">
-                        Drop a photo or browse files
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        Optional · JPG or PNG up to 5 MB
-                      </span>
-                      <input id="cover" type="file" accept="image/*" className="sr-only" />
-                    </label>
-                  </Field>
-
-                  <Field>
                     <FieldLabel htmlFor="privacy">Privacy</FieldLabel>
                     <div className="grid gap-2 sm:grid-cols-3">
                       {privacyOptions.map((option) => (
@@ -420,14 +446,14 @@ export default function NewTripPage() {
                     <ol className="flex flex-col gap-2">
                       {stopCities.map((city, index) => (
                         <li
-                          key={city.id}
+                          key={city.id || city.city_id}
                           className="flex items-center gap-3 rounded-xl border border-border bg-card p-3"
                         >
                           <span className="tabular flex size-7 items-center justify-center rounded-full bg-brand-soft text-xs font-bold text-brand">
                             {index + 1}
                           </span>
                           <Image
-                            src={city.image || '/placeholder.svg'}
+                            src={city.image || '/images/paris.png'}
                             alt=""
                             width={80}
                             height={80}
@@ -437,13 +463,13 @@ export default function NewTripPage() {
                           <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-semibold text-ink">{city.name}</p>
                             <p className="truncate text-xs text-muted-foreground">
-                              {city.country} · {city.suggestedDays} · €{city.dailyCost}/day
+                              {city.country} · Cost Index: {city.cost_index} · €{city.dailyCost}/day
                             </p>
                           </div>
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => toggleStop(city.id)}
+                            onClick={() => toggleStop(String(city.city_id || city.id))}
                             className="text-muted-foreground"
                           >
                             <TrashIcon data-icon="inline-start" />
@@ -457,15 +483,16 @@ export default function NewTripPage() {
                   <Separator />
 
                   <div className="flex flex-col gap-3">
-                    <h3 className="text-sm font-semibold text-ink">Suggested cities</h3>
+                    <h3 className="text-sm font-semibold text-ink">Select from Available Cities</h3>
                     <ul className="grid gap-2 sm:grid-cols-2">
-                      {cities.map((city) => {
-                        const added = stops.includes(city.id)
+                      {availableCities.map((city) => {
+                        const cityIdStr = String(city.city_id || city.id)
+                        const added = stops.includes(cityIdStr)
                         return (
-                          <li key={city.id}>
+                          <li key={cityIdStr}>
                             <button
                               type="button"
-                              onClick={() => toggleStop(city.id)}
+                              onClick={() => toggleStop(cityIdStr)}
                               className={cn(
                                 'flex min-h-14 w-full items-center gap-3 rounded-xl border px-3 py-2 text-left transition-colors',
                                 added
@@ -553,11 +580,11 @@ export default function NewTripPage() {
                       onChange={(e) => setCustomTotalBudget(Number(e.target.value))}
                     />
                     <FieldDescription>
-                      Total calculated budget for all {travellers} traveller{travellers > 1 ? 's' : ''} across {nightCount} nights & {stops.length} city stop{stops.length === 1 ? '' : 's'}.
+                      Calculated budget for all {travellers} traveller{travellers > 1 ? 's' : ''} across {nightCount} nights & {stops.length} city stop{stops.length === 1 ? '' : 's'}.
                     </FieldDescription>
                   </Field>
 
-                  {/* Useful Smart Budget Breakdown Card */}
+                  {/* 4 Buckets Breakdown Card */}
                   <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4">
                     <div className="flex items-center justify-between">
                       <span className="font-display text-sm font-bold text-ink">Estimated Total Cost Breakdown</span>
@@ -566,11 +593,11 @@ export default function NewTripPage() {
 
                     <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
                       <div className="rounded-lg bg-muted/60 p-2.5">
-                        <p className="text-muted-foreground font-medium">🏨 Stays</p>
+                        <p className="text-muted-foreground font-medium">🏨 Stay</p>
                         <p className="font-bold text-ink text-sm mt-0.5">{money(smartBudget.stays)}</p>
                       </div>
                       <div className="rounded-lg bg-muted/60 p-2.5">
-                        <p className="text-muted-foreground font-medium">🍕 Dining</p>
+                        <p className="text-muted-foreground font-medium">🍕 Meals</p>
                         <p className="font-bold text-ink text-sm mt-0.5">{money(smartBudget.meals)}</p>
                       </div>
                       <div className="rounded-lg bg-muted/60 p-2.5">
@@ -582,24 +609,6 @@ export default function NewTripPage() {
                         <p className="font-bold text-ink text-sm mt-0.5">{money(smartBudget.transport)}</p>
                       </div>
                     </div>
-
-                    {/* Feasibility Alert */}
-                    {targetBudget < smartBudget.total * 0.75 ? (
-                      <p className="flex items-center gap-1.5 text-xs font-semibold text-warning">
-                        <TriangleAlertIcon className="size-4 shrink-0 text-warning" aria-hidden="true" />
-                        Target budget is low for these cities ({stopCities.map((c) => c.name).join(', ')}) & {travellers} travellers. Consider budgeting at least {money(smartBudget.total)}.
-                      </p>
-                    ) : targetBudget > smartBudget.total * 1.3 ? (
-                      <p className="flex items-center gap-1.5 text-xs font-semibold text-success">
-                        <CheckIcon className="size-4 shrink-0 text-success" aria-hidden="true" />
-                        Generous budget! You have plenty of buffer for luxury stays, fine dining & experiences.
-                      </p>
-                    ) : (
-                      <p className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
-                        <CheckIcon className="size-4 shrink-0 text-success" aria-hidden="true" />
-                        Realistic total budget tailored to your travel style ({style}) and daily pace.
-                      </p>
-                    )}
                   </div>
 
                   <label className="flex items-start gap-2 text-sm text-muted-foreground">
@@ -637,16 +646,15 @@ export default function NewTripPage() {
                   </dl>
 
                   <div className="rounded-xl border border-border bg-card p-4">
-                    <h3 className="text-sm font-semibold text-ink">Route</h3>
+                    <h3 className="text-sm font-semibold text-ink">Route Stops</h3>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      {stopCities.map((c) => c.name).join(' → ') || 'No cities added yet'}
+                      {stopCities.map((c) => c.name).join(' → ') || 'No cities selected yet'}
                     </p>
                   </div>
 
                   <div className="flex items-start gap-2 rounded-xl border border-success/30 bg-success-soft p-3 text-sm text-ink">
                     <CheckIcon className="mt-0.5 size-4 text-success" aria-hidden="true" />
-                    Everything looks consistent. Creating the trip opens the itinerary builder with
-                    empty days ready to fill.
+                    Ready to create! Clicking below will insert the trip into the MySQL database and open the live builder.
                   </div>
                 </div>
               )}
@@ -685,10 +693,6 @@ export default function NewTripPage() {
                 <Badge variant="secondary" className="w-fit">
                   {style} pace · {privacyOptions.find((p) => p.value === privacy)?.label}
                 </Badge>
-                <p className="text-xs leading-relaxed text-muted-foreground">
-                  Estimates use average daily costs for each city. Real numbers arrive once you add
-                  stays and activities.
-                </p>
               </div>
             </Card>
           </aside>
@@ -706,7 +710,7 @@ export default function NewTripPage() {
           <span className="tabular text-xs text-muted-foreground">Step {step} of 4</span>
           <Button className="ml-auto" onClick={goNext} disabled={pending}>
             {pending && <Spinner data-icon="inline-start" />}
-            {step === 4 ? (pending ? 'Creating trip…' : 'Create trip') : 'Continue'}
+            {step === 4 ? (pending ? 'Creating trip…' : 'Create trip in database') : 'Continue'}
             {!pending && <ArrowRightIcon data-icon="inline-end" />}
           </Button>
         </div>

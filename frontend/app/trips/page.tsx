@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { MapIcon, PlusIcon } from 'lucide-react'
 import { AppShell } from '@/components/app-shell'
@@ -9,7 +9,8 @@ import { TripCard } from '@/components/trip-card'
 import { Button } from '@/components/ui/button'
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { trips, type TripStatus } from '@/lib/data'
+import { tripsApi } from '@/lib/api'
+import { type Trip, type TripStatus } from '@/lib/data'
 
 const groups: { id: string; label: string; statuses: TripStatus[] }[] = [
   { id: 'all', label: 'All', statuses: ['ongoing', 'upcoming', 'draft', 'completed'] },
@@ -20,28 +21,45 @@ const groups: { id: string; label: string; statuses: TripStatus[] }[] = [
 ]
 
 export default function TripsPage() {
+  const [tripList, setTripList] = useState<Trip[]>([])
+  const [loading, setLoading] = useState(true)
   const [query, setQuery] = useState('')
   const [sort, setSort] = useState('Departure date')
   const [group, setGroup] = useState('None')
   const [filters, setFilters] = useState<string[]>([])
 
+  useEffect(() => {
+    async function loadTrips() {
+      try {
+        setLoading(true)
+        const data = await tripsApi.getAll()
+        setTripList(data)
+      } catch (err) {
+        console.error('Failed to load trips from API:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadTrips()
+  }, [])
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
-    let list = trips.filter(
+    let list = tripList.filter(
       (t) =>
         !q ||
         t.name.toLowerCase().includes(q) ||
-        t.cities.some((c) => c.toLowerCase().includes(q)),
+        (t.cities || []).some((c) => c.toLowerCase().includes(q)),
     )
     if (filters.length > 0) {
       list = list.filter((t) => filters.includes(t.style))
     }
     return [...list].sort((a, b) => {
-      if (sort === 'Budget') return b.budget - a.budget
+      if (sort === 'Budget') return (b.budget || 0) - (a.budget || 0)
       if (sort === 'Name') return a.name.localeCompare(b.name)
-      return a.start.localeCompare(b.start)
+      return (a.start || '').localeCompare(b.start || '')
     })
-  }, [query, sort, filters])
+  }, [tripList, query, sort, filters])
 
   return (
     <AppShell title="My Trips" searchPlaceholder="Search my trips">
@@ -50,7 +68,9 @@ export default function TripsPage() {
           <div>
             <h2 className="font-display text-2xl font-bold text-ink">My trips</h2>
             <p className="text-sm text-muted-foreground">
-              {trips.length} trips across {new Set(trips.flatMap((t) => t.cities)).size} cities.
+              {loading
+                ? 'Loading trips from database…'
+                : `${tripList.length} trips across ${new Set(tripList.flatMap((t) => t.cities || [])).size} cities.`}
             </p>
           </div>
           <Button render={<Link href="/trips/new" />}>
@@ -151,9 +171,9 @@ export default function TripsPage() {
                       <EmptyMedia variant="icon">
                         <MapIcon />
                       </EmptyMedia>
-                      <EmptyTitle>No trips here yet</EmptyTitle>
+                      <EmptyTitle>No trips found</EmptyTitle>
                       <EmptyDescription>
-                        Nothing matches these filters. Start a new plan instead.
+                        No trips found matching these filters. Create a new trip to get started.
                       </EmptyDescription>
                     </EmptyHeader>
                     <EmptyContent>

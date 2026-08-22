@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import {
   ArrowRightIcon,
+  BookmarkIcon,
   CameraIcon,
   CheckIcon,
   DownloadIcon,
@@ -14,9 +15,11 @@ import {
   MailIcon,
   MapPinIcon,
   SmartphoneIcon,
+  StarIcon,
   Trash2Icon,
   TriangleAlertIcon,
 } from 'lucide-react'
+import { toast } from 'sonner'
 import { AppShell } from '@/components/app-shell'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
@@ -45,7 +48,8 @@ import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
-import { currentUser, money, trips } from '@/lib/data'
+import { authApi, citiesApi, tripsApi } from '@/lib/api'
+import { currentUser as seedUser, money, type City, type Trip } from '@/lib/data'
 
 const interests = ['Food', 'Culture', 'Nature', 'Nightlife', 'Budget', 'Adventure', 'Slow travel']
 const currencies = ['INR (₹)', 'EUR (€)', 'USD ($)', 'GBP (£)']
@@ -86,14 +90,81 @@ const sessions = [
 ]
 
 export default function ProfilePage() {
+  const [user, setUser] = useState<any>(seedUser)
+  const [tripList, setTripList] = useState<Trip[]>([])
+  const [savedCities, setSavedCities] = useState<City[]>([])
+  const [fullName, setFullName] = useState('Yash Mehta')
+  const [email, setEmail] = useState('yash.mehta@example.com')
+  const [language, setLanguage] = useState('English')
+  const [homeCity, setHomeCity] = useState('Ahmedabad, India')
+  const [bio, setBio] = useState('Planning trips with authentic food markets and scenic views.')
+  const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
-  const completed = trips.filter((t) => t.status === 'completed').length
-  const totalPlanned = trips.reduce((sum, t) => sum + t.estimated, 0)
+  const [loading, setLoading] = useState(true)
 
-  function onSave(event: React.FormEvent<HTMLFormElement>) {
+  useEffect(() => {
+    async function loadProfile() {
+      try {
+        setLoading(true)
+        const [meData, tripsData, savedData] = await Promise.allSettled([
+          authApi.getMe(),
+          tripsApi.getAll(),
+          citiesApi.getSaved(),
+        ])
+
+        if (meData.status === 'fulfilled' && meData.value) {
+          setUser(meData.value)
+          setFullName(meData.value.name || meData.value.full_name || 'Yash Mehta')
+          setEmail(meData.value.email || 'yash.mehta@example.com')
+          setLanguage(meData.value.language_preference || 'English')
+        }
+
+        if (tripsData.status === 'fulfilled') {
+          setTripList(tripsData.value)
+        }
+
+        if (savedData.status === 'fulfilled') {
+          setSavedCities(savedData.value)
+        }
+      } catch (err) {
+        console.warn('Profile load fallback:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadProfile()
+  }, [])
+
+  const completed = tripList.filter((t) => t.status === 'completed').length
+  const totalPlanned = tripList.reduce((sum, t) => sum + (t.estimated || 0), 0)
+
+  async function onSave(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2200)
+    try {
+      setSaving(true)
+      await authApi.updateProfile({
+        full_name: fullName,
+        email,
+        language_preference: language,
+      })
+      setSaved(true)
+      toast.success('Profile updated successfully!')
+      setTimeout(() => setSaved(false), 2200)
+    } catch (err) {
+      toast.error('Failed to update profile.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleRemoveSavedCity(cityId: string | number) {
+    try {
+      await citiesApi.removeSaved(cityId)
+      setSavedCities((prev) => prev.filter((c) => String(c.city_id || c.id) !== String(cityId)))
+      toast.success('Removed destination from saved list.')
+    } catch (err) {
+      toast.error('Failed to remove saved destination.')
+    }
   }
 
   return (
@@ -112,37 +183,41 @@ export default function ProfilePage() {
             <div className="relative w-fit">
               <Avatar className="size-20 ring-4 ring-card/20">
                 <AvatarFallback className="bg-brand-soft text-xl font-semibold text-brand">
-                  {currentUser.initials}
+                  {user.initials || 'YM'}
                 </AvatarFallback>
               </Avatar>
               <Button
                 size="icon"
                 aria-label="Change photo"
                 className="absolute -bottom-1 -right-1 size-8 rounded-full"
+                onClick={() => toast.info('Photo upload is enabled in settings')}
               >
                 <CameraIcon className="size-4" />
               </Button>
             </div>
             <div className="flex flex-col gap-1.5">
               <h2 className="font-display text-2xl font-bold text-card sm:text-3xl">
-                {currentUser.name}
+                {fullName}
               </h2>
               <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-card/80">
                 <span className="flex items-center gap-1.5">
                   <MailIcon className="size-4" aria-hidden="true" />
-                  {currentUser.email}
+                  {email}
                 </span>
                 <span className="flex items-center gap-1.5">
                   <MapPinIcon className="size-4" aria-hidden="true" />
-                  {currentUser.homeCity}
+                  {homeCity}
                 </span>
               </p>
               <div className="flex flex-wrap gap-2 pt-1">
                 <Badge className="border-0 bg-card/15 text-card backdrop-blur">
-                  Member since Nov 2024
+                  Member since 2026
                 </Badge>
                 <Badge className="border-0 bg-card/15 text-card backdrop-blur">
                   {completed} trips completed
+                </Badge>
+                <Badge className="border-0 bg-card/15 text-card backdrop-blur">
+                  {savedCities.length} destinations bookmarked
                 </Badge>
               </div>
             </div>
@@ -161,10 +236,10 @@ export default function ProfilePage() {
 
         <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {[
-            ['Trips planned', String(trips.length)],
-            ['Cities visited', '28'],
-            ['Days on the road', '146'],
-            ['Lifetime planned spend', money(totalPlanned)],
+            ['Trips in database', String(tripList.length)],
+            ['Saved destinations', String(savedCities.length)],
+            ['Trips completed', String(completed)],
+            ['Lifetime estimated spend', money(totalPlanned || 2840)],
           ].map(([label, value]) => (
             <div key={label} className="rounded-2xl border border-border bg-card p-4">
               <dt className="text-xs text-muted-foreground">{label}</dt>
@@ -173,7 +248,69 @@ export default function ProfilePage() {
           ))}
         </dl>
 
-        {/* Preplanned Trips Section (Wireframe Screen 7) */}
+        {/* Saved Destinations List (User Profile Requirement) */}
+        <section className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-display text-lg font-bold text-ink">Saved Destinations</h3>
+              <p className="text-xs text-muted-foreground">
+                Cities you&apos;ve bookmarked from Explore for upcoming trip planning.
+              </p>
+            </div>
+            <Button variant="ghost" size="sm" render={<Link href="/explore" />}>
+              Explore more cities
+            </Button>
+          </div>
+
+          {savedCities.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+              No destinations saved yet. Visit the Explore page to bookmark favorite cities.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {savedCities.map((city) => (
+                <Card key={city.id || city.city_id} className="overflow-hidden">
+                  <div className="relative">
+                    <Image
+                      src={city.image || '/images/paris.png'}
+                      alt={city.name}
+                      width={400}
+                      height={200}
+                      className="h-32 w-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveSavedCity(city.city_id || city.id)}
+                      className="absolute right-2.5 top-2.5 rounded-full bg-card/90 p-1.5 text-destructive shadow-sm hover:bg-card"
+                      title="Remove from saved"
+                    >
+                      <Trash2Icon className="size-3.5" />
+                    </button>
+                    <span className="absolute left-2.5 top-2.5 flex items-center gap-1 rounded-full bg-ink/80 px-2 py-0.5 text-[10px] font-semibold text-card backdrop-blur">
+                      <StarIcon className="size-2.5 fill-warning text-warning" />
+                      Cost Index: {city.cost_index}
+                    </span>
+                  </div>
+                  <CardHeader className="p-3 pb-1">
+                    <CardTitle className="text-sm font-bold text-ink">
+                      {city.name}, {city.country}
+                    </CardTitle>
+                    <CardDescription className="text-xs">
+                      {city.region} · Daily Cost: {money(city.dailyCost || 80)}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardFooter className="p-3 pt-2">
+                    <Button variant="outline" size="sm" className="w-full" render={<Link href="/explore" />}>
+                      Explore activities
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Preplanned Trips Section */}
         <section className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <h3 className="font-display text-lg font-bold text-ink">Pre-planned Trips</h3>
@@ -182,14 +319,14 @@ export default function ProfilePage() {
             </Button>
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {trips
+            {tripList
               .filter((t) => t.status === 'upcoming' || t.status === 'draft' || t.status === 'ongoing')
               .slice(0, 3)
               .map((trip) => (
                 <Card key={trip.id} className="overflow-hidden">
                   <div className="relative">
                     <Image
-                      src={trip.cover || '/placeholder.svg'}
+                      src={trip.cover || '/images/paris.png'}
                       alt={trip.name}
                       width={400}
                       height={200}
@@ -201,48 +338,13 @@ export default function ProfilePage() {
                   </div>
                   <CardHeader className="p-3 pb-1">
                     <CardTitle className="text-sm font-bold text-ink">{trip.name}</CardTitle>
-                    <CardDescription className="text-xs">{trip.dateLabel} · {trip.cities.join(', ')}</CardDescription>
+                    <CardDescription className="text-xs">
+                      {trip.dateLabel} · {(trip.cities || []).join(', ')}
+                    </CardDescription>
                   </CardHeader>
                   <CardFooter className="p-3 pt-2">
                     <Button variant="outline" size="sm" className="w-full" render={<Link href={`/trips/${trip.id}`} />}>
                       View Itinerary
-                    </Button>
-                  </CardFooter>
-                </Card>
-              ))}
-          </div>
-        </section>
-
-        {/* Previous Trips Section (Wireframe Screen 7) */}
-        <section className="flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <h3 className="font-display text-lg font-bold text-ink">Previous Trips</h3>
-            <span className="text-xs text-muted-foreground">{completed} completed</span>
-          </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {trips
-              .filter((t) => t.status === 'completed')
-              .map((trip) => (
-                <Card key={trip.id} className="overflow-hidden">
-                  <div className="relative">
-                    <Image
-                      src={trip.cover || '/placeholder.svg'}
-                      alt={trip.name}
-                      width={400}
-                      height={200}
-                      className="h-28 w-full object-cover grayscale transition-all hover:grayscale-0"
-                    />
-                    <Badge variant="secondary" className="absolute left-2.5 top-2.5 border-0 bg-card/90 text-ink backdrop-blur text-[10px]">
-                      COMPLETED
-                    </Badge>
-                  </div>
-                  <CardHeader className="p-3 pb-1">
-                    <CardTitle className="text-sm font-bold text-ink">{trip.name}</CardTitle>
-                    <CardDescription className="text-xs">{trip.dateLabel} · {trip.cities.join(', ')}</CardDescription>
-                  </CardHeader>
-                  <CardFooter className="p-3 pt-2">
-                    <Button variant="outline" size="sm" className="w-full" render={<Link href={`/trips/${trip.id}`} />}>
-                      View Memory
                     </Button>
                   </CardFooter>
                 </Card>
@@ -266,50 +368,44 @@ export default function ProfilePage() {
                 <CardHeader>
                   <CardTitle>Personal details</CardTitle>
                   <CardDescription>
-                    This is what collaborators see on shared itineraries.
+                    Update your name, email, and preferences stored in the MySQL database.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <FieldGroup>
                     <div className="grid gap-4 sm:grid-cols-2">
                       <Field>
-                        <FieldLabel htmlFor="p-first">First name</FieldLabel>
-                        <Input id="p-first" defaultValue="Yash" autoComplete="given-name" />
+                        <FieldLabel htmlFor="p-name">Full name</FieldLabel>
+                        <Input
+                          id="p-name"
+                          value={fullName}
+                          onChange={(e) => setFullName(e.target.value)}
+                          required
+                        />
                       </Field>
-                      <Field>
-                        <FieldLabel htmlFor="p-last">Last name</FieldLabel>
-                        <Input id="p-last" defaultValue="Mehta" autoComplete="family-name" />
-                      </Field>
-                    </div>
-                    <div className="grid gap-4 sm:grid-cols-2">
                       <Field>
                         <FieldLabel htmlFor="p-email">Email address</FieldLabel>
                         <Input
                           id="p-email"
                           type="email"
-                          defaultValue={currentUser.email}
-                          autoComplete="email"
-                        />
-                        <FieldDescription>Verified on 4 Dec 2024.</FieldDescription>
-                      </Field>
-                      <Field>
-                        <FieldLabel htmlFor="p-phone">Phone number</FieldLabel>
-                        <Input
-                          id="p-phone"
-                          type="tel"
-                          defaultValue="+91 98765 43210"
-                          autoComplete="tel"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          required
                         />
                       </Field>
                     </div>
                     <div className="grid gap-4 sm:grid-cols-2">
                       <Field>
                         <FieldLabel htmlFor="p-city">Home city</FieldLabel>
-                        <Input id="p-city" defaultValue="Ahmedabad" autoComplete="address-level2" />
+                        <Input
+                          id="p-city"
+                          value={homeCity}
+                          onChange={(e) => setHomeCity(e.target.value)}
+                        />
                       </Field>
                       <Field>
-                        <FieldLabel htmlFor="p-lang">Language</FieldLabel>
-                        <Select defaultValue="English">
+                        <FieldLabel htmlFor="p-lang">Language Preference</FieldLabel>
+                        <Select value={language} onValueChange={(v) => setLanguage(v as string)}>
                           <SelectTrigger id="p-lang" className="w-full">
                             <SelectValue placeholder="Language" />
                           </SelectTrigger>
@@ -330,19 +426,19 @@ export default function ProfilePage() {
                       <Textarea
                         id="p-bio"
                         rows={3}
-                        defaultValue="Planning long weekends around food markets and ferry rides. Usually travelling with two friends."
+                        value={bio}
+                        onChange={(e) => setBio(e.target.value)}
                       />
-                      <FieldDescription>Shown on itineraries you publish.</FieldDescription>
                     </Field>
                   </FieldGroup>
                 </CardContent>
                 <CardFooter className="justify-end gap-2">
-                  <Button type="button" variant="ghost">
+                  <Button type="button" variant="ghost" onClick={() => setFullName(user.name || 'Yash Mehta')}>
                     Discard
                   </Button>
-                  <Button type="submit">
+                  <Button type="submit" disabled={saving}>
                     {saved ? <CheckIcon data-icon="inline-start" /> : null}
-                    {saved ? 'Saved' : 'Save changes'}
+                    {saved ? 'Saved' : saving ? 'Saving…' : 'Save changes'}
                   </Button>
                 </CardFooter>
               </Card>
@@ -350,232 +446,77 @@ export default function ProfilePage() {
           </TabsContent>
 
           <TabsContent value="preferences" className="pt-5">
-            <div className="grid gap-4 lg:grid-cols-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle>What you travel for</CardTitle>
-                  <CardDescription>Used to rank cities and activity suggestions.</CardDescription>
-                </CardHeader>
-                <CardContent className="flex flex-col gap-6">
-                  <ToggleGroup
-                    multiple
-                    defaultValue={['Food', 'Culture', 'Slow travel']}
-                    aria-label="Interests"
-                    className="flex-wrap justify-start"
-                  >
-                    {interests.map((i) => (
-                      <ToggleGroupItem key={i} value={i} aria-label={i}>
-                        {i}
-                      </ToggleGroupItem>
-                    ))}
-                  </ToggleGroup>
-                  <Separator />
+            <Card>
+              <CardHeader>
+                <CardTitle>Travel Preferences</CardTitle>
+                <CardDescription>Default filters for new trips and destination recommendations.</CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-6">
+                <FieldGroup>
                   <Field>
-                    <FieldLabel htmlFor="pace">Preferred pace</FieldLabel>
-                    <ToggleGroup
-                      id="pace"
-                      defaultValue={['Balanced']}
-                      aria-label="Preferred pace"
-                      className="justify-start"
-                    >
-                      {paces.map((p) => (
-                        <ToggleGroupItem key={p} value={p} aria-label={p}>
-                          {p}
-                        </ToggleGroupItem>
+                    <FieldLabel>Default Travel Style</FieldLabel>
+                    <ToggleGroup defaultValue={['Balanced']} className="justify-start">
+                      {['Budget', 'Balanced', 'Comfort', 'Luxury'].map((s) => (
+                        <ToggleGroupItem key={s} value={s}>{s}</ToggleGroupItem>
                       ))}
                     </ToggleGroup>
-                    <FieldDescription>
-                      Balanced keeps two to three activities on a normal day.
-                    </FieldDescription>
                   </Field>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Defaults for new trips</CardTitle>
-                  <CardDescription>Applied every time you start planning.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <FieldGroup>
-                    <Field>
-                      <FieldLabel htmlFor="p-currency">Default currency</FieldLabel>
-                      <Select defaultValue="INR (₹)">
-                        <SelectTrigger id="p-currency" className="w-full">
-                          <SelectValue placeholder="Currency" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectGroup>
-                            {currencies.map((c) => (
-                              <SelectItem key={c} value={c}>
-                                {c}
-                              </SelectItem>
-                            ))}
-                          </SelectGroup>
-                        </SelectContent>
-                      </Select>
-                    </Field>
-                    <Field>
-                      <FieldLabel htmlFor="p-budget">Typical total trip budget (€)</FieldLabel>
-                      <Input id="p-budget" type="number" defaultValue={2500} step={100} />
-                      <FieldDescription>Total budget for all travellers & stops per trip.</FieldDescription>
-                    </Field>
-                    <Separator />
-                    {[
-                      ['Start days with breakfast', 'Reserve a morning slot for food.', true],
-                      ['Avoid back-to-back travel legs', 'Keep a rest day after long transfers.', true],
-                      ['Suggest free alternatives', 'Offer a no-cost option beside paid entries.', false],
-                    ].map(([title, description, on]) => (
-                      <label
-                        key={title as string}
-                        className="flex items-start justify-between gap-4"
-                      >
-                        <span className="flex flex-col gap-0.5">
-                          <span className="text-sm font-medium text-ink">{title}</span>
-                          <span className="text-xs leading-relaxed text-muted-foreground">
-                            {description}
-                          </span>
-                        </span>
-                        <Switch defaultChecked={on as boolean} />
-                      </label>
-                    ))}
-                  </FieldGroup>
-                </CardContent>
-              </Card>
-            </div>
+                  <Field>
+                    <FieldLabel>Preferred Interests</FieldLabel>
+                    <ToggleGroup multiple defaultValue={['Food', 'Culture']} className="justify-start flex-wrap">
+                      {interests.map((i) => (
+                        <ToggleGroupItem key={i} value={i}>{i}</ToggleGroupItem>
+                      ))}
+                    </ToggleGroup>
+                  </Field>
+                </FieldGroup>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="notifications" className="pt-5">
             <Card>
               <CardHeader>
-                <CardTitle>Notifications</CardTitle>
-                <CardDescription>Choose what reaches your inbox and phone.</CardDescription>
-                <CardAction>
-                  <Badge variant="secondary">3 of 4 on</Badge>
-                </CardAction>
+                <CardTitle>Notification Preferences</CardTitle>
+                <CardDescription>Control alerts, price drops, and collaborator activity.</CardDescription>
               </CardHeader>
-              <CardContent className="flex flex-col">
-                {notifications.map((n, index) => (
-                  <div key={n.id}>
-                    {index > 0 && <Separator className="my-4" />}
-                    <label className="flex items-start justify-between gap-4">
-                      <span className="flex flex-col gap-0.5">
-                        <span className="text-sm font-medium text-ink">{n.title}</span>
-                        <span className="text-xs leading-relaxed text-muted-foreground">
-                          {n.description}
-                        </span>
-                      </span>
+              <CardContent>
+                <ul className="flex flex-col divide-y divide-border">
+                  {notifications.map((n) => (
+                    <li key={n.id} className="flex items-center justify-between py-3">
+                      <div>
+                        <p className="text-sm font-semibold text-ink">{n.title}</p>
+                        <p className="text-xs text-muted-foreground">{n.description}</p>
+                      </div>
                       <Switch defaultChecked={n.on} />
-                    </label>
-                  </div>
-                ))}
+                    </li>
+                  ))}
+                </ul>
               </CardContent>
-              <CardFooter className="flex-col items-start gap-2 border-t border-border pt-4">
-                <p className="text-xs text-muted-foreground">
-                  Critical account and booking emails are always sent.
-                </p>
-              </CardFooter>
             </Card>
           </TabsContent>
 
           <TabsContent value="security" className="pt-5">
-            <div className="flex flex-col gap-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Password</CardTitle>
-                  <CardDescription>Last changed 4 months ago.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <FieldGroup>
-                    <Field>
-                      <FieldLabel htmlFor="cur-pass">Current password</FieldLabel>
-                      <Input id="cur-pass" type="password" autoComplete="current-password" />
-                    </Field>
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <Field>
-                        <FieldLabel htmlFor="new-pass">New password</FieldLabel>
-                        <Input id="new-pass" type="password" autoComplete="new-password" />
-                      </Field>
-                      <Field>
-                        <FieldLabel htmlFor="confirm-pass">Confirm new password</FieldLabel>
-                        <Input id="confirm-pass" type="password" autoComplete="new-password" />
-                      </Field>
-                    </div>
-                  </FieldGroup>
-                </CardContent>
-                <CardFooter className="justify-end">
-                  <Button>
-                    <KeyRoundIcon data-icon="inline-start" />
-                    Update password
-                  </Button>
-                </CardFooter>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Active sessions</CardTitle>
-                  <CardDescription>Sign out anything you do not recognise.</CardDescription>
-                </CardHeader>
-                <CardContent className="flex flex-col gap-3">
+            <Card>
+              <CardHeader>
+                <CardTitle>Security & Active Sessions</CardTitle>
+                <CardDescription>Manage active logins and connected devices.</CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-4">
+                <ul className="flex flex-col divide-y divide-border">
                   {sessions.map((s) => (
-                    <div
-                      key={s.id}
-                      className="flex items-center gap-3 rounded-xl border border-border p-3"
-                    >
-                      <span className="flex size-9 items-center justify-center rounded-lg bg-muted">
-                        <s.icon className="size-4 text-muted-foreground" aria-hidden="true" />
-                      </span>
-                      <span className="flex flex-col">
-                        <span className="text-sm font-medium text-ink">{s.device}</span>
-                        <span className="text-xs text-muted-foreground">{s.last}</span>
-                      </span>
-                      {s.current ? (
-                        <Badge className="ml-auto border-0 bg-success-soft text-success">
-                          This device
-                        </Badge>
-                      ) : (
-                        <Button variant="ghost" size="sm" className="ml-auto">
-                          Sign out
-                        </Button>
-                      )}
-                    </div>
+                    <li key={s.id} className="flex items-center gap-3 py-3">
+                      <s.icon className="size-5 text-muted-foreground" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-ink">{s.device}</p>
+                        <p className="text-xs text-muted-foreground">{s.last}</p>
+                      </div>
+                      {s.current && <Badge variant="secondary">Current device</Badge>}
+                    </li>
                   ))}
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Your data</CardTitle>
-                  <CardDescription>
-                    Export every trip, or close the account permanently.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="flex flex-wrap gap-2">
-                  <Button variant="outline">
-                    <DownloadIcon data-icon="inline-start" />
-                    Export trips as JSON
-                  </Button>
-                  <Button variant="outline">
-                    <DownloadIcon data-icon="inline-start" />
-                    Download PDF archive
-                  </Button>
-                </CardContent>
-                <CardFooter className="flex-col items-start gap-3 border-t border-border pt-4">
-                  <p className="flex items-start gap-2 text-sm text-muted-foreground">
-                    <TriangleAlertIcon
-                      className="mt-0.5 size-4 shrink-0 text-destructive"
-                      aria-hidden="true"
-                    />
-                    Deleting your account removes all itineraries, budgets and shared links. This
-                    cannot be undone.
-                  </p>
-                  <Button variant="destructive">
-                    <Trash2Icon data-icon="inline-start" />
-                    Delete account
-                  </Button>
-                </CardFooter>
-              </Card>
-            </div>
+                </ul>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>

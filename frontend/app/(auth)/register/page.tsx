@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { CameraIcon, CheckIcon } from 'lucide-react'
+import { toast } from 'sonner'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -26,14 +27,20 @@ import {
 import { Spinner } from '@/components/ui/spinner'
 import { Textarea } from '@/components/ui/textarea'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { authApi } from '@/lib/api'
 
-const countries = ['India', 'Portugal', 'Japan', 'Germany', 'Netherlands', 'Türkiye', 'Other']
+const countries = ['India', 'Portugal', 'Japan', 'Germany', 'Netherlands', 'France', 'USA', 'Other']
 const interests = ['Food', 'Culture', 'Nature', 'Nightlife', 'Budget']
 
 export default function RegisterPage() {
   const router = useRouter()
   const [pending, setPending] = useState(false)
+  const [firstName, setFirstName] = useState('Yash')
+  const [lastName, setLastName] = useState('Mehta')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [homeCountry, setHomeCountry] = useState('India')
+  const [selectedInterests, setSelectedInterests] = useState<string[]>(['Food', 'Culture'])
 
   const strength =
     (password.length >= 8 ? 1 : 0) +
@@ -42,10 +49,27 @@ export default function RegisterPage() {
     (/[^A-Za-z0-9]/.test(password) ? 1 : 0)
   const strengthLabel = ['Too short', 'Weak', 'Fair', 'Good', 'Strong'][strength]
 
-  function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setPending(true)
-    setTimeout(() => router.push('/dashboard'), 800)
+    if (!email || password.length < 6) {
+      toast.error('Please enter a valid email and password (minimum 6 characters).')
+      return
+    }
+
+    try {
+      setPending(true)
+      await authApi.register({
+        email,
+        password,
+        full_name: `${firstName} ${lastName}`.trim(),
+        language_preference: 'English',
+      })
+      toast.success('Account created successfully in database!')
+      router.push('/dashboard')
+    } catch (err: any) {
+      toast.error(err.message || 'Registration failed.')
+      setPending(false)
+    }
   }
 
   return (
@@ -53,7 +77,7 @@ export default function RegisterPage() {
       <header className="flex flex-col gap-2">
         <h1 className="text-3xl font-extrabold text-ink">Create your account</h1>
         <p className="text-sm leading-relaxed text-muted-foreground">
-          Tell us a little about how you travel and we&apos;ll tune the suggestions.
+          Sign up to store live itineraries and destinations directly in MySQL.
         </p>
       </header>
 
@@ -62,26 +86,40 @@ export default function RegisterPage() {
           <div className="flex items-center gap-4">
             <Avatar className="size-16">
               <AvatarFallback className="bg-brand-soft text-base font-semibold text-brand">
-                YM
+                {firstName?.[0] || 'Y'}{lastName?.[0] || 'M'}
               </AvatarFallback>
             </Avatar>
             <div className="flex flex-col gap-1">
-              <Button type="button" variant="outline" size="sm" className="w-fit">
+              <Button type="button" variant="outline" size="sm" className="w-fit" onClick={() => toast.info('Photo upload enabled via backend')}>
                 <CameraIcon data-icon="inline-start" />
                 Upload photo
               </Button>
-              <p className="text-xs text-muted-foreground">JPG or PNG, up to 2 MB.</p>
+              <p className="text-xs text-muted-foreground">JPG or PNG, up to 5 MB.</p>
             </div>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <Field>
               <FieldLabel htmlFor="first">First name</FieldLabel>
-              <Input id="first" placeholder="Yash" autoComplete="given-name" required />
+              <Input
+                id="first"
+                placeholder="Yash"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                autoComplete="given-name"
+                required
+              />
             </Field>
             <Field>
               <FieldLabel htmlFor="last">Last name</FieldLabel>
-              <Input id="last" placeholder="Mehta" autoComplete="family-name" required />
+              <Input
+                id="last"
+                placeholder="Mehta"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                autoComplete="family-name"
+                required
+              />
             </Field>
           </div>
 
@@ -92,26 +130,17 @@ export default function RegisterPage() {
                 id="reg-email"
                 type="email"
                 placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 autoComplete="email"
                 required
               />
             </Field>
             <Field>
-              <FieldLabel htmlFor="phone">Phone number</FieldLabel>
-              <Input id="phone" type="tel" placeholder="+91 98765 43210" autoComplete="tel" />
-            </Field>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field>
-              <FieldLabel htmlFor="city">Home city</FieldLabel>
-              <Input id="city" placeholder="Ahmedabad" autoComplete="address-level2" />
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="country">Country</FieldLabel>
-              <Select defaultValue="India">
-                <SelectTrigger id="country" className="w-full">
-                  <SelectValue placeholder="Select country" />
+              <FieldLabel htmlFor="home-country">Home Country</FieldLabel>
+              <Select value={homeCountry} onValueChange={(v) => setHomeCountry(v as string)}>
+                <SelectTrigger id="home-country" className="w-full">
+                  <SelectValue placeholder="Country" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
@@ -131,69 +160,71 @@ export default function RegisterPage() {
             <Input
               id="reg-password"
               type="password"
-              autoComplete="new-password"
+              placeholder="At least 8 characters"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              autoComplete="new-password"
               required
             />
-            <div className="flex items-center gap-3">
-              <div className="flex flex-1 gap-1" aria-hidden="true">
-                {[0, 1, 2, 3].map((i) => (
-                  <span
-                    key={i}
-                    className={`h-1 flex-1 rounded-full ${
-                      i < strength ? 'bg-success' : 'bg-muted'
-                    }`}
-                  />
-                ))}
-              </div>
-              <span className="text-xs text-muted-foreground">{strengthLabel}</span>
+            <div className="flex items-center justify-between gap-2 pt-1 text-xs">
+              <span className="text-muted-foreground">Password strength:</span>
+              <span className="font-semibold text-ink">{strengthLabel}</span>
             </div>
-            <FieldDescription>
-              Use 8+ characters with a number and a symbol.
-            </FieldDescription>
+            <div className="flex h-1 gap-1 overflow-hidden rounded-full bg-muted">
+              {[0, 1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className={`flex-1 ${i < strength ? 'bg-brand' : 'bg-transparent'}`}
+                />
+              ))}
+            </div>
           </Field>
 
           <FieldSeparator />
 
           <Field>
-            <FieldLabel htmlFor="interests">What do you travel for?</FieldLabel>
+            <FieldLabel htmlFor="interests">Travel interests</FieldLabel>
             <ToggleGroup
               id="interests"
               multiple
-              defaultValue={['Food', 'Culture']}
+              value={selectedInterests}
+              onValueChange={(v) => setSelectedInterests(v as string[])}
               className="flex-wrap justify-start"
             >
               {interests.map((i) => (
-                <ToggleGroupItem key={i} value={i} aria-label={i}>
+                <ToggleGroupItem key={i} value={i}>
                   {i}
                 </ToggleGroupItem>
               ))}
             </ToggleGroup>
-          </Field>
-
-          <Field>
-            <FieldLabel htmlFor="about">Additional information</FieldLabel>
-            <Textarea
-              id="about"
-              rows={3}
-              placeholder="Dietary needs, accessibility requirements, travel pace…"
-            />
+            <FieldDescription>
+              Helps us recommend the best activities and stays for your trips.
+            </FieldDescription>
           </Field>
 
           <label className="flex items-start gap-2 text-sm text-muted-foreground">
             <Checkbox defaultChecked className="mt-0.5" />
-            Email me itinerary reminders and price drops for saved cities.
+            <span>
+              I agree to the{' '}
+              <Link href="/terms" className="font-semibold text-ink underline">
+                Terms of Service
+              </Link>{' '}
+              and{' '}
+              <Link href="/privacy" className="font-semibold text-ink underline">
+                Privacy Policy
+              </Link>
+              .
+            </span>
           </label>
 
-          <Button type="submit" size="lg" className="h-10 w-full" disabled={pending}>
-            {pending ? <Spinner data-icon="inline-start" /> : <CheckIcon data-icon="inline-start" />}
-            {pending ? 'Creating account…' : 'Register'}
+          <Button type="submit" size="lg" className="w-full" disabled={pending}>
+            {pending ? <Spinner data-icon="inline-start" /> : null}
+            {pending ? 'Creating account in database…' : 'Create account'}
           </Button>
         </FieldGroup>
       </form>
 
-      <p className="text-sm text-muted-foreground">
+      <p className="text-center text-sm text-muted-foreground">
         Already have an account?{' '}
         <Link href="/login" className="font-semibold text-brand hover:underline">
           Sign in

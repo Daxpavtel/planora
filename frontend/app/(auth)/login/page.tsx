@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { EyeIcon, EyeOffIcon, LockIcon, MailIcon } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field'
@@ -14,6 +15,7 @@ import {
   InputGroupInput,
 } from '@/components/ui/input-group'
 import { Spinner } from '@/components/ui/spinner'
+import { authApi } from '@/lib/api'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -23,7 +25,7 @@ export default function LoginPage() {
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!email.includes('@') || password.length < 6) {
       setError('Enter a valid email and a password of at least 6 characters.')
@@ -31,7 +33,16 @@ export default function LoginPage() {
     }
     setError(null)
     setPending(true)
-    setTimeout(() => router.push('/dashboard'), 700)
+
+    try {
+      await authApi.login({ email, password })
+      toast.success('Logged in successfully!')
+      router.push('/dashboard')
+    } catch (err: any) {
+      setError(err.message || 'Invalid email or password.')
+      toast.error('Login failed.')
+      setPending(false)
+    }
   }
 
   return (
@@ -39,7 +50,7 @@ export default function LoginPage() {
       <header className="flex flex-col gap-2">
         <h1 className="text-3xl font-extrabold text-ink">Welcome back</h1>
         <p className="text-sm leading-relaxed text-muted-foreground">
-          Pick up where you left off — the European Summer Escape is 68% planned.
+          Sign in to your Planora account connected directly to your MySQL database.
         </p>
       </header>
 
@@ -99,22 +110,25 @@ export default function LoginPage() {
               <Checkbox defaultChecked />
               Keep me signed in
             </label>
-            <Link href="/login" className="text-sm font-medium text-brand hover:underline">
+            <Link
+              href="/forgot-password"
+              className="text-xs font-semibold text-brand hover:underline"
+            >
               Forgot password?
             </Link>
           </div>
 
-          <Button type="submit" size="lg" className="h-10 w-full" disabled={pending}>
+          <Button type="submit" size="lg" className="w-full" disabled={pending}>
             {pending ? <Spinner data-icon="inline-start" /> : null}
             {pending ? 'Signing in…' : 'Sign in'}
           </Button>
         </FieldGroup>
       </form>
 
-      <p className="text-sm text-muted-foreground">
-        New to GlobeTrotter?{' '}
+      <p className="text-center text-sm text-muted-foreground">
+        Don&apos;t have an account yet?{' '}
         <Link href="/register" className="font-semibold text-brand hover:underline">
-          Create an account
+          Create one now
         </Link>
       </p>
     </div>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { use, useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import {
@@ -18,6 +18,7 @@ import {
   UsersIcon,
   WalletIcon,
 } from 'lucide-react'
+import { toast } from 'sonner'
 import { AppShell } from '@/components/app-shell'
 import { TripBudget } from '@/components/trip-budget'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -27,11 +28,16 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
-import { featuredTrip, itinerary, money, type ItineraryActivity } from '@/lib/data'
+import { tripsApi } from '@/lib/api'
+import { money, type ItineraryActivity, type ItineraryDay, type Trip } from '@/lib/data'
 import { cn } from '@/lib/utils'
 
 const cityAccent: Record<string, string> = {
   Paris: 'bg-brand',
+  Tokyo: 'bg-primary',
+  Rome: 'bg-warning',
+  Bangkok: 'bg-emerald-500',
+  'New York City': 'bg-indigo-500',
   Amsterdam: 'bg-success',
   Berlin: 'bg-warning',
 }
@@ -86,16 +92,44 @@ function ActivityBlock({ activity }: { activity: ItineraryActivity }) {
   )
 }
 
-export default function TripItineraryPage() {
+export default function TripItineraryPage({ params }: { params: Promise<{ id: string }> }) {
+  const unwrappedParams = use(params)
+  const tripIdParam = unwrappedParams?.id || '1'
+
+  const [trip, setTrip] = useState<Trip | null>(null)
+  const [itineraryDays, setItineraryDays] = useState<ItineraryDay[]>([])
+  const [loading, setLoading] = useState(true)
   const [view, setView] = useState('List')
-  const totalActivities = itinerary.reduce((sum, d) => sum + d.activities.length, 0)
+
+  useEffect(() => {
+    async function loadTripDetails() {
+      try {
+        setLoading(true)
+        const data = await tripsApi.getById(tripIdParam)
+        if (data) {
+          setTrip(data)
+          if (data.itinerary) {
+            setItineraryDays(data.itinerary)
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load trip from API:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadTripDetails()
+  }, [tripIdParam])
+
+  const totalActivities = itineraryDays.reduce((sum, d) => sum + d.activities.length, 0)
+  const citiesList = trip?.cities || ['Paris', 'Rome']
 
   return (
     <AppShell title="Itinerary" searchPlaceholder="Search this itinerary">
       <div className="flex flex-col gap-6">
         <section className="relative overflow-hidden rounded-3xl bg-ink">
           <Image
-            src={featuredTrip.cover || '/placeholder.svg'}
+            src={trip?.cover || '/images/paris.png'}
             alt=""
             width={1600}
             height={900}
@@ -104,20 +138,20 @@ export default function TripItineraryPage() {
           />
           <div className="relative flex flex-col gap-5 p-6 sm:p-9">
             <Badge className="w-fit border-0 bg-card/15 text-card backdrop-blur">
-              {featuredTrip.style} · {featuredTrip.status === 'upcoming' ? 'Upcoming' : 'In progress'}
+              {trip?.style || 'Balanced'} · {trip?.status === 'upcoming' ? 'Upcoming' : 'In progress'}
             </Badge>
             <div className="flex flex-col gap-2">
               <h2 className="font-display text-3xl font-bold text-card sm:text-4xl">
-                {featuredTrip.name}
+                {trip?.name || 'European Summer Escape'}
               </h2>
-              <p className="text-sm text-card/80">{featuredTrip.cities.join(' → ')}</p>
+              <p className="text-sm text-card/80">{citiesList.join(' → ')}</p>
             </div>
             <dl className="flex flex-wrap gap-x-8 gap-y-4">
               {[
-                [CalendarDaysIcon, 'Dates', featuredTrip.dateLabel],
-                [UsersIcon, 'Travellers', `${featuredTrip.travellers} people`],
-                [ClockIcon, 'Duration', `${itinerary.length} days`],
-                [WalletIcon, 'Estimated', money(featuredTrip.estimated)],
+                [CalendarDaysIcon, 'Dates', trip?.dateLabel || '12 – 24 Jun 2026'],
+                [UsersIcon, 'Travellers', `${trip?.travellers || 2} people`],
+                [ClockIcon, 'Duration', `${itineraryDays.length || 5} days`],
+                [WalletIcon, 'Estimated Spend', money(trip?.estimated || 2840)],
               ].map(([Icon, label, value]) => {
                 const IconComponent = Icon as typeof CalendarDaysIcon
                 return (
@@ -134,14 +168,14 @@ export default function TripItineraryPage() {
               })}
             </dl>
             <div className="flex flex-wrap gap-2">
-              <Button render={<Link href={`/trips/${featuredTrip.id}/build`} />}>
+              <Button render={<Link href={`/trips/${tripIdParam}/build`} />}>
                 <PencilIcon data-icon="inline-start" />
                 Edit trip
               </Button>
               <Button
                 variant="outline"
                 className="border-card/30 bg-card/10 text-card hover:bg-card/20 hover:text-card"
-                render={<Link href={`/shared/${featuredTrip.id}`} />}
+                render={<Link href={`/shared/${trip?.public_share_token || tripIdParam}`} />}
               >
                 <Share2Icon data-icon="inline-start" />
                 Share
@@ -149,6 +183,7 @@ export default function TripItineraryPage() {
               <Button
                 variant="outline"
                 className="border-card/30 bg-card/10 text-card hover:bg-card/20 hover:text-card"
+                onClick={() => toast.success('Exporting itinerary PDF...')}
               >
                 <DownloadIcon data-icon="inline-start" />
                 Export PDF
@@ -156,6 +191,7 @@ export default function TripItineraryPage() {
               <Button
                 variant="outline"
                 className="border-card/30 bg-card/10 text-card hover:bg-card/20 hover:text-card"
+                onClick={() => window.print()}
               >
                 <PrinterIcon data-icon="inline-start" />
                 Print
@@ -167,7 +203,7 @@ export default function TripItineraryPage() {
         <Tabs defaultValue="itinerary" className="gap-5">
           <TabsList>
             <TabsTrigger value="itinerary">Itinerary</TabsTrigger>
-            <TabsTrigger value="budget">Budget</TabsTrigger>
+            <TabsTrigger value="budget">Budget Breakdown</TabsTrigger>
           </TabsList>
 
           <TabsContent value="itinerary" className="flex flex-col gap-5">
@@ -188,11 +224,10 @@ export default function TripItineraryPage() {
                 ))}
               </ToggleGroup>
               <p className="text-sm text-muted-foreground">
-                {itinerary.length} days · {totalActivities} activities · {featuredTrip.cities.length}{' '}
-                cities
+                {itineraryDays.length} days · {totalActivities} activities · {citiesList.length} cities
               </p>
               <div className="ml-auto flex -space-x-2">
-                {featuredTrip.collaborators.map((c) => (
+                {(trip?.collaborators || ['YM', 'AR']).map((c) => (
                   <Avatar key={c} className="size-7 ring-2 ring-background">
                     <AvatarFallback className="bg-sand text-[10px] font-semibold text-ink">
                       {c}
@@ -204,8 +239,8 @@ export default function TripItineraryPage() {
 
             {view === 'List' && (
               <ol className="flex flex-col">
-                {itinerary.map((day, index) => {
-                  const newCity = index === 0 || itinerary[index - 1].city !== day.city
+                {itineraryDays.map((day, index) => {
+                  const newCity = index === 0 || itineraryDays[index - 1].city !== day.city
                   const dayCost = day.activities.reduce((s, a) => s + a.cost, 0)
                   return (
                     <li key={day.id} className="flex flex-col">
@@ -238,9 +273,13 @@ export default function TripItineraryPage() {
                             {money(dayCost)}
                           </span>
                         </header>
-                        {day.activities.map((activity) => (
-                          <ActivityBlock key={activity.id} activity={activity} />
-                        ))}
+                        {day.activities.length === 0 ? (
+                          <p className="text-xs text-muted-foreground italic">No activities planned for this day.</p>
+                        ) : (
+                          day.activities.map((activity) => (
+                            <ActivityBlock key={activity.id} activity={activity} />
+                          ))
+                        )}
                       </div>
                     </li>
                   )
@@ -250,7 +289,7 @@ export default function TripItineraryPage() {
 
             {view === 'Calendar' && (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {itinerary.map((day) => (
+                {itineraryDays.map((day) => (
                   <div key={day.id} className="rounded-2xl border border-border bg-card p-4">
                     <div className="flex items-center gap-2">
                       <span
@@ -277,14 +316,6 @@ export default function TripItineraryPage() {
                         </li>
                       ))}
                     </ul>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="mt-3 w-full"
-                      render={<Link href="/calendar" />}
-                    >
-                      Open in calendar
-                    </Button>
                   </div>
                 ))}
               </div>
@@ -294,20 +325,20 @@ export default function TripItineraryPage() {
               <div className="overflow-hidden rounded-2xl border border-border bg-card">
                 <Image
                   src="/images/map-preview.png"
-                  alt={`Map of the route between ${featuredTrip.cities.join(', ')}`}
+                  alt={`Map of the route between ${citiesList.join(', ')}`}
                   width={1280}
                   height={720}
                   className="h-[320px] w-full object-cover sm:h-[420px]"
                 />
                 <ul className="flex flex-col divide-y divide-border">
-                  {featuredTrip.cities.map((city, index) => (
+                  {citiesList.map((city, index) => (
                     <li key={city} className="flex items-center gap-3 p-4">
                       <span className="tabular flex size-7 items-center justify-center rounded-full bg-brand-soft text-xs font-bold text-brand">
                         {index + 1}
                       </span>
                       <span className="text-sm font-semibold text-ink">{city}</span>
                       <span className="ml-auto text-xs text-muted-foreground">
-                        {itinerary.filter((d) => d.city === city).length} days planned
+                        {itineraryDays.filter((d) => d.city === city).length} days planned
                       </span>
                     </li>
                   ))}
@@ -324,7 +355,7 @@ export default function TripItineraryPage() {
                 variant="outline"
                 size="sm"
                 className="ml-auto shrink-0"
-                render={<Link href={`/trips/${featuredTrip.id}/build`} />}
+                render={<Link href={`/trips/${tripIdParam}/build`} />}
               >
                 Open builder
               </Button>
@@ -332,7 +363,7 @@ export default function TripItineraryPage() {
           </TabsContent>
 
           <TabsContent value="budget">
-            <TripBudget />
+            <TripBudget tripId={tripIdParam} />
           </TabsContent>
         </Tabs>
       </div>
