@@ -51,7 +51,7 @@ const slides = [
     tag: 'The Sun City Citadel',
   },
   {
-    image: 'https://images.unsplash.com/photo-1600100397608-f010f443b749?auto=format&fit=crop&w=1200&q=80',
+    image: 'https://images.unsplash.com/photo-1620766182966-c6eb5ed2b788?auto=format&fit=crop&w=1200&q=80',
     monument: 'Vijaya Vittala Stone Chariot',
     location: 'Hampi, Karnataka',
     quote: '“Ancient carved stone marvels, musical pillars, and legendary ruins of the Vijayanagara Empire.”',
