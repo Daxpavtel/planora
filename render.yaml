@@ -4,8 +4,21 @@ services:
     name: planora-backend
     env: node
     rootDir: backend
-    buildCommand: npm install
+    buildCommand: npm install && npm run prisma:generate && npm run prisma:deploy
     startCommand: npm start
     envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: planora-db
+          property: connectionString
       - key: PORT
         value: 10000
+      - key: NODE_ENV
+        value: production
+      - key: CORS_ORIGIN
+        value: https://your-vercel-frontend-url.vercel.app
+
+  # 2. The PostgreSQL Database
+  # Note: Render doesn't natively provision MySQL via blueprint 	ype: pckg currently. 
+  # But assuming a generic DB connection since we are targeting a MySQL Private Service as per prompt:
+  # We won't provision the DB via render.yaml here, the user must provision the MySQL Private Service manually.

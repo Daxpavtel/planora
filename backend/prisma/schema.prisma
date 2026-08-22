@@ -1,0 +1,86 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String
+  firstName String
+  initials  String
+  homeCity  String?
+  currency  String   @default("USD")
+  trips     Trip[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Trip {
+  id            String       @id @default(uuid())
+  name          String
+  cover         String?
+  start         DateTime
+  end           DateTime
+  dateLabel     String
+  travellers    Int
+  estimated     Float
+  budget        Float
+  progress      Int
+  status        String
+  style         String
+  summary       String       @db.Text
+  userId        String
+  user          User         @relation(fields: [userId], references: [id])
+  destinations  City[]
+  activities    Activity[]
+  expenses      Expense[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+model City {
+  id            String   @id @default(uuid())
+  name          String
+  country       String
+  region        String
+  image         String?
+  description   String   @db.Text
+  dailyCost     Float
+  popularity    Int
+  suggestedDays String
+  climate       String
+  budgetLevel   String
+  tripId        String?
+  trip          Trip?    @relation(fields: [tripId], references: [id])
+}
+
+model Activity {
+  id          String   @id @default(uuid())
+  title       String
+  category    String
+  image       String?
+  description String   @db.Text
+  duration    String
+  cost        Float
+  rating      Float
+  location    String
+  bestTime    String
+  indoor      Boolean
+  tripId      String?
+  trip        Trip?    @relation(fields: [tripId], references: [id])
+}
+
+model Expense {
+  id       String @id @default(uuid())
+  item     String
+  category String
+  day      String
+  amount   Float
+  tripId   String
+  trip     Trip   @relation(fields: [tripId], references: [id])
+}
