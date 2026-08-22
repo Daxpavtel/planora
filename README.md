@@ -1,10 +1,10 @@
-<div align="center">
-  <h1>?? Planora</h1>
+﻿<div align="center">
+  <h1>✈️ Planora</h1>
   <h3>Plan smarter. Travel better.</h3>
   <p>A personalized multi-city travel planning platform designed to make trip organization effortless and collaborative.</p>
 
   <p>
-    <a href="https://planora-pjo666j0n-pateldaksh2206-2764s-projects.vercel.app/login"><strong>?? View Live Demo</strong></a>
+    <a href="https://planora-pjo666j0n-pateldaksh2206-2764s-projects.vercel.app/login"><strong>🔴 View Live Demo</strong></a>
   </p>
 
   <div>
@@ -17,40 +17,40 @@
 
 <br />
 
-## ?? The Problem
+## 🎯 The Problem
 
 Planning a multi-city trip is notoriously chaotic. Travelers usually have to juggle dozens of browser tabs, copy-paste hotel links into messy spreadsheets, manually calculate currency and budgets, and struggle to coordinate with fellow travelers. 
 
 **Planora** solves this by providing a unified dashboard where travelers can seamlessly stitch together destinations, automatically estimate budgets based on travel styles, and build day-by-day itineraries without the headache.
 
-Built for the **Odoo � LDCE Ahmedabad Hackathon** (inspired by the GlobeTrotter problem statement).
+Built for the **Odoo × LDCE Ahmedabad Hackathon** (inspired by the GlobeTrotter problem statement).
 
 ---
 
-## ? Features
+## ✨ Features
 
-### ? Currently Implemented
-- ??? **Trip Creation Engine:** Step-by-step wizard to create trips, input destinations, set travel dates, and select travel pace.
-- ?? **Smart Budget Estimation:** Automatically calculates feasibility alerts if a user's budget is too low for the selected cities and travel style.
-- ?? **REST API Backend:** Full Express backend wired to a highly-available TiDB Serverless MySQL database.
+### ✅ Currently Implemented
+- 🗺️ **Trip Creation Engine:** Step-by-step wizard to create trips, input destinations, set travel dates, and select travel pace.
+- 💰 **Smart Budget Estimation:** Automatically calculates feasibility alerts if a user's budget is too low for the selected cities and travel style.
+- 🔗 **REST API Backend:** Full Express backend wired to a highly-available TiDB Serverless MySQL database.
 
-### ?? Planned / Work-in-Progress
-- ?? **Day-by-Day Itinerary Builder:** Drag and drop activities into specific days.
-- ?? **Real-time Collaboration:** Live-syncing for multiple travelers editing the same trip.
-- ?? **Interactive Maps:** Visualizing the route between city stops.
+### 🚧 Planned / Work-in-Progress
+- 📅 **Day-by-Day Itinerary Builder:** Drag and drop activities into specific days.
+- 👥 **Real-time Collaboration:** Live-syncing for multiple travelers editing the same trip.
+- 📍 **Interactive Maps:** Visualizing the route between city stops.
 
 ---
 
-## ??? Architecture
+## 🏗️ Architecture
 
 Planora is split into two fully decoupled services:
 
 1. **Frontend:** Next.js (App Router), Tailwind CSS, Shadcn UI components. Deployed on **Vercel**.
-2. **Backend:** Node.js, Express.js, \mysql2\ driver (Raw SQL). Deployed on **Render**.
+2. **Backend:** Node.js, Express.js, mysql2 driver (Raw SQL). Deployed on **Render**.
 
 ---
 
-## ?? Local Development
+## 🚀 Local Development
 
 To run this project locally, you must spin up both the frontend and backend servers.
 
@@ -63,12 +63,12 @@ Create a free MySQL database on **TiDB Cloud** or run MySQL locally. You will ne
 <details>
 <summary><strong>2. Backend Setup</strong></summary>
 
-\\\ash
+`ash
 cd backend
 npm install
-\\\
-Create a \.env\ file in the \ackend/\ directory:
-\\\env
+`
+Create a .env file in the ackend/ directory:
+`env
 PORT=5000
 JWT_SECRET=your_super_secret_string
 DB_HOST=gateway01.ap-southeast-1.prod.aws.tidbcloud.com
@@ -76,43 +76,43 @@ DB_PORT=4000
 DB_USERNAME=your_username
 DB_PASSWORD=your_password
 DB_DATABASE=sys
-\\\
+`
 Start the backend:
-\\\ash
+`ash
 npm run dev
-\\\
+`
 *The API will run on http://localhost:5000*
 </details>
 
 <details>
 <summary><strong>3. Frontend Setup</strong></summary>
 
-\\\ash
+`ash
 cd frontend
 npm install
-\\\
-Create a \.env.local\ file in the \rontend/\ directory:
-\\\env
+`
+Create a .env.local file in the rontend/ directory:
+`env
 NEXT_PUBLIC_API_BASE_URL=http://localhost:5000/api
-\\\
+`
 Start the frontend:
-\\\ash
+`ash
 npm run dev
-\\\
+`
 *The web app will run on http://localhost:3000*
 </details>
 
 ---
 
-## ?? Deployment Guides
+## ☁️ Deployment Guides
 
-- **Frontend (Vercel):** Add \NEXT_PUBLIC_API_BASE_URL\ to Vercel Environment Variables pointing to your Render backend URL.
-- **Backend (Render):** Set the Build Command to \
-pm install\ and the Start Command to \
-pm start\. Add your TiDB credentials to Render's Environment Variables.
+- **Frontend (Vercel):** Add NEXT_PUBLIC_API_BASE_URL to Vercel Environment Variables pointing to your Render backend URL.
+- **Backend (Render):** Set the Build Command to 
+pm install and the Start Command to 
+pm start. Add your TiDB credentials to Render's Environment Variables.
 
 ---
 
 <div align="center">
-  <p>Built with ?? for the Odoo � LDCE Hackathon</p>
+  <p>Built with ❤️ for the Odoo × LDCE Hackathon</p>
 </div>
