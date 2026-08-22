@@ -4,7 +4,7 @@
   <p>A personalized multi-city travel planning platform designed to make trip organization effortless and collaborative.</p>
 
   <p>
-    <a href="https://planora-pjo666j0n-pateldaksh2206-2764s-projects.vercel.app/login"><strong>🔴 View Live Demo</strong></a>
+    <a href="https://planora-pjo666j0n-pateldaksh2206-2764s-projects.vercel.app?_vercel_share=aOa1PStIBZdjxGTKCz8sv5nAAsqr2xlJ"><strong>🔴 View Live Demo</strong></a>
   </p>
 
   <div>
