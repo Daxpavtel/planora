@@ -6,15 +6,19 @@ dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 const dbConfig = {
   host: process.env.DB_HOST || '127.0.0.1',
-  port: parseInt(process.env.DB_PORT || '3306', 10),
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'planora',
+  port: parseInt(process.env.DB_PORT || '4000', 10),
+  user: process.env.DB_USERNAME || process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD ? process.env.DB_PASSWORD.replace(/'/g, "") : '',
+  database: process.env.DB_DATABASE || process.env.DB_NAME || 'planora',
   waitForConnections: true,
   connectionLimit: 15,
   queueLimit: 0,
   decimalNumbers: true,
   dateStrings: true,
+  ssl: {
+    minVersion: 'TLSv1.2',
+    rejectUnauthorized: true
+  }
 };
 
 let pool = null;
@@ -250,3 +254,4 @@ module.exports = {
   getPool,
   initializeDatabase,
 };
+
