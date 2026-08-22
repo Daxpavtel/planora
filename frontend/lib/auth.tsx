@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import * as React from 'react'
 
@@ -40,6 +40,7 @@ interface AuthContextValue {
   }) => void
   updateProfile: (data: Partial<UserProfile>) => void
   logout: () => void
+  deleteAccount: () => void
 }
 
 const AuthContext = React.createContext<AuthContextValue | undefined>(undefined)
@@ -186,6 +187,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(defaultUser)
   }, [])
 
+  const deleteAccount = React.useCallback(() => {
+    try {
+      localStorage.removeItem(STORAGE_KEY)
+      localStorage.removeItem('planora_selected_cities')
+      localStorage.removeItem('planora_saved_cities')
+      localStorage.removeItem('planora_language')
+    } catch {
+      // ignore
+    }
+    setUser(defaultUser)
+  }, [])
+
   return (
     <AuthContext.Provider
       value={{
@@ -194,6 +207,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         register,
         updateProfile,
         logout,
+        deleteAccount,
       }}
     >
       {children}

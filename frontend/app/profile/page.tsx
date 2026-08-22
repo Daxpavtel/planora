@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import {
   ArrowRightIcon,
   CameraIcon,
@@ -21,6 +23,7 @@ import { AppShell } from '@/components/app-shell'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Spinner } from '@/components/ui/spinner'
 import {
   Card,
   CardAction,
@@ -50,7 +53,19 @@ import { money, trips } from '@/lib/data'
 
 const interests = ['Food', 'Culture', 'Nature', 'Heritage', 'Budget', 'Adventure', 'Slow travel']
 const currencies = ['INR (₹)', 'EUR (€)', 'USD ($)', 'GBP (£)']
-const languages = ['English', 'Hindi', 'Gujarati', 'Marathi', 'Tamil', 'Bengali']
+const languages = [
+  'English',
+  'Hindi (हिंदी)',
+  'Gujarati (ગુજરાતી)',
+  'Marathi (मराठी)',
+  'Bengali (বাংলা)',
+  'Tamil (தமிழ்)',
+  'Telugu (తెలుగు)',
+  'Kannada (ಕನ್ನಡ)',
+  'French (Français)',
+  'German (Deutsch)',
+  'Spanish (Español)',
+]
 const paces = ['Relaxed', 'Balanced', 'Packed']
 
 const notifications = [
@@ -87,12 +102,40 @@ const sessions = [
 ]
 
 export default function ProfilePage() {
-  const { user, updateProfile } = useAuth()
+  const router = useRouter()
+  const { user, updateProfile, deleteAccount } = useAuth()
   const [saved, setSaved] = useState(false)
   const [formFirst, setFormFirst] = useState(user.firstName)
   const [formLast, setFormLast] = useState(user.lastName || '')
   const [formEmail, setFormEmail] = useState(user.email)
   const [formCity, setFormCity] = useState(user.homeCity)
+  const [language, setLanguage] = useState('English')
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [deleteLoading, setDeleteLoading] = useState(false)
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedLang = localStorage.getItem('planora_language')
+      if (savedLang) setLanguage(savedLang)
+    }
+  }, [])
+
+  function handleLanguageChange(lang: string) {
+    setLanguage(lang)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('planora_language', lang)
+    }
+    toast.success(`Language set to ${lang}`)
+  }
+
+  function handleDeleteAccount() {
+    setDeleteLoading(true)
+    setTimeout(() => {
+      deleteAccount()
+      toast.success('Your account has been deleted.')
+      router.push('/login')
+    }, 700)
+  }
 
   // Sync state if user changes
   useEffect(() => {
@@ -167,9 +210,29 @@ export default function ProfilePage() {
                 </Badge>
               </div>
             </div>
-            <div className="sm:ml-auto">
+            <div className="flex flex-wrap items-center gap-2.5 sm:ml-auto">
+              {/* Language Selection Dropdown Menu */}
+              <div className="flex items-center gap-1.5 rounded-2xl border border-card/30 bg-card/15 px-3 py-1 text-card backdrop-blur">
+                <GlobeIcon className="size-3.5 shrink-0 text-card/80" />
+                <Select value={language} onValueChange={handleLanguageChange}>
+                  <SelectTrigger className="h-7 border-0 bg-transparent p-0 text-xs font-semibold text-card shadow-none focus:ring-0 [&>svg]:text-card/80">
+                    <SelectValue placeholder="Language" />
+                  </SelectTrigger>
+                  <SelectContent align="end">
+                    <SelectGroup>
+                      {languages.map((l) => (
+                        <SelectItem key={l} value={l}>
+                          {l}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
+
               <Button
                 variant="outline"
+                size="sm"
                 className="border-card/30 bg-card/10 text-card hover:bg-card/20 hover:text-card"
                 render={<Link href="/trips" />}
               >
@@ -605,10 +668,12 @@ export default function ProfilePage() {
                       className="mt-0.5 size-4 shrink-0 text-destructive"
                       aria-hidden="true"
                     />
-                    Deleting your account removes all itineraries, budgets and shared links. This
-                    cannot be undone.
+                    Deleting your account removes all itineraries, budgets, and saved Indian destinations. This cannot be undone.
                   </p>
-                  <Button variant="destructive">
+                  <Button
+                    variant="destructive"
+                    onClick={() => setDeleteConfirmOpen(true)}
+                  >
                     <Trash2Icon data-icon="inline-start" />
                     Delete account
                   </Button>
@@ -617,6 +682,47 @@ export default function ProfilePage() {
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* Delete Account Confirmation Dialog Modal */}
+        {deleteConfirmOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+            <div className="flex w-full max-w-md flex-col gap-4 rounded-2xl border border-border bg-card p-6 shadow-2xl">
+              <div className="flex items-center gap-3 text-destructive">
+                <span className="flex size-10 items-center justify-center rounded-xl bg-destructive/10">
+                  <Trash2Icon className="size-5" />
+                </span>
+                <div>
+                  <h3 className="font-display text-lg font-bold text-ink">Delete your account?</h3>
+                  <p className="text-xs text-muted-foreground">This action is permanent and cannot be undone.</p>
+                </div>
+              </div>
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                All your customized Indian trip itineraries, saved destinations, live budgets, and profile preferences will be permanently wiped out.
+              </p>
+              <div className="mt-2 flex items-center justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setDeleteConfirmOpen(false)}
+                  disabled={deleteLoading}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteAccount}
+                  disabled={deleteLoading}
+                >
+                  {deleteLoading ? (
+                    <Spinner className="size-4" data-icon="inline-start" />
+                  ) : (
+                    <Trash2Icon data-icon="inline-start" />
+                  )}
+                  {deleteLoading ? 'Deleting account…' : 'Yes, delete account'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </AppShell>
   )
